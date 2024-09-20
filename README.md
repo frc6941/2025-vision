@@ -1,3 +1,10 @@
-# Northstar
+# 2025-vision
 
-Northstar is 6328's AprilTag tracking system using OpenCV's ArUco module and NT4. This code is provided for reference, but **we don't have the capacity to assist other teams in using it for custom setups**. Please check out [PhotonVision](https://photonvision.org) or [Limelight](https://limelightvision.io) as community-supported alternatives.
+## 开发注意事项
+
+变更无法被git同步的设置时（如修改镜像源等操作系统层面的修改），请先执行
+
+```bash
+sudo timeshift --create --comments "YYYYMMDDCommentsInUpperCamelCase"  --tags O
+```
+
