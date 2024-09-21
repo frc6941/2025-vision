@@ -4,7 +4,7 @@ import cv2
 import ntcore
 import numpy
 
-from config.config import ConfigStore, RemoteConfig
+from config_app.config import ConfigStore, RemoteConfig
 
 
 class ConfigSource:

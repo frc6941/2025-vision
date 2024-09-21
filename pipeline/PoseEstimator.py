@@ -2,7 +2,7 @@ from typing import Union
 
 import cv2
 import numpy
-from config.config import ConfigStore
+from config_app.config import ConfigStore
 from vision_types import FiducialImageObservation, FiducialPoseObservation
 
 from pipeline.coordinate_systems import openCvPoseToWpilib

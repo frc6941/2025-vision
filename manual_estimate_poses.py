@@ -1,6 +1,6 @@
 import cv2
-from config.ConfigSource import ConfigSource, FileConfigSource
-from config.config import ConfigStore, LocalConfig, RemoteConfig
+from config_app.ConfigSource import ConfigSource, FileConfigSource
+from config_app.config import ConfigStore, LocalConfig, RemoteConfig
 from pipeline.FiducialDetector import ArucoFiducialDetector
 from pipeline.PoseEstimator import SquareTargetPoseEstimator
 from wpimath.geometry import *

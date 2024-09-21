@@ -8,8 +8,8 @@ import ntcore
 from calibration.CalibrationCommandSource import (CalibrationCommandSource,
                                                   NTCalibrationCommandSource)
 from calibration.CalibrationSession import CalibrationSession
-from config.config import ConfigStore, LocalConfig, RemoteConfig
-from config.ConfigSource import ConfigSource, FileConfigSource, NTConfigSource
+from config_app.config import ConfigStore, LocalConfig, RemoteConfig
+from config_app.ConfigSource import ConfigSource, FileConfigSource, NTConfigSource
 from output.OutputPublisher import NTOutputPublisher, OutputPublisher
 from output.overlay_util import *
 from output.StreamServer import MjpegServer

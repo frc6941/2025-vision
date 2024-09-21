@@ -2,7 +2,7 @@ import math
 from typing import List, Union
 
 import ntcore
-from config.config import ConfigStore
+from config_app.config import ConfigStore
 from vision_types import CameraPoseObservation, FiducialPoseObservation
 
 
