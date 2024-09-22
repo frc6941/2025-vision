@@ -7,7 +7,11 @@ from vision_types import CameraPoseObservation, FiducialPoseObservation
 
 
 class OutputPublisher:
-    def send(self, config_store: ConfigStore, timestamp: float, observation: Union[CameraPoseObservation, None], demo_observation: Union[FiducialPoseObservation, None], fps: Union[int, None] = None) -> None:
+    def send(self, 
+             config_store: ConfigStore, 
+             timestamp: float, observation: Union[CameraPoseObservation, None], 
+             demo_observation: Union[FiducialPoseObservation, None], 
+             fps: Union[int, None] = None) -> None:
         raise NotImplementedError
 
 
@@ -17,7 +21,12 @@ class NTOutputPublisher(OutputPublisher):
     _observations_pub: ntcore.DoubleArrayPublisher
     _fps_pub: ntcore.IntegerPublisher
 
-    def send(self, config_store: ConfigStore, timestamp: float, observation: Union[CameraPoseObservation, None], demo_observation: Union[FiducialPoseObservation, None], fps: Union[int, None] = None) -> None:
+    def send(self, 
+             config_store: ConfigStore, 
+             timestamp: float, 
+             observation: Union[CameraPoseObservation, None], 
+             demo_observation: Union[FiducialPoseObservation, None], 
+             fps: Union[int, None] = None) -> None:
         # Initialize publishers on first call
         if not self._init_complete:
             self._init_complete = True

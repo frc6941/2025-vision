@@ -20,6 +20,8 @@ from pipeline.PoseEstimator import SquareTargetPoseEstimator
 
 DEMO_ID = 29
 
+
+
 if __name__ == "__main__":
     config = ConfigStore(LocalConfig(), RemoteConfig())
     local_config_source: ConfigSource = FileConfigSource()
@@ -42,7 +44,7 @@ if __name__ == "__main__":
     frame_count = 0
     last_print = 0
     was_calibrating = False
-    while True:
+    while True: 
         remote_config_source.update(config)
         timestamp = time.time()
         success, image = capture.get_frame(config)
@@ -61,7 +63,9 @@ if __name__ == "__main__":
         if calibration_command_source.get_calibrating(config):
             # Calibration mode
             was_calibrating = True
-            calibration_session.process_frame(image, calibration_command_source.get_capture_flag(config))
+            calibration_session.process_frame(
+                image, 
+                calibration_command_source.get_capture_flag(config))
 
         elif was_calibrating:
             # Finish calibration
@@ -77,8 +81,13 @@ if __name__ == "__main__":
             demo_image_observations = [x for x in image_observations if x.tag_id == DEMO_ID]
             demo_pose_observation: Union[FiducialPoseObservation, None] = None
             if len(demo_image_observations) > 0:
-                demo_pose_observation = tag_pose_estimator.solve_fiducial_pose(demo_image_observations[0], config)
-            output_publisher.send(config, timestamp, camera_pose_observation, demo_pose_observation, fps)
+                demo_pose_observation = tag_pose_estimator.solve_fiducial_pose(
+                    demo_image_observations[0], 
+                    config)
+            output_publisher.send(config, timestamp, 
+                                       camera_pose_observation, 
+                                       demo_pose_observation, 
+                                       fps)
 
         else:
             # No calibration

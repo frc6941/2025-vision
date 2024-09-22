@@ -11,10 +11,11 @@ class ConfigSource:
     def update(self, config_store: ConfigStore) -> None:
         raise NotImplementedError
 
-
-class FileConfigSource(ConfigSource):
+class ConfigFile:
     CONFIG_FILENAME = "config.json"
     CALIBRATION_FILENAME = "calibration.json"
+class FileConfigSource(ConfigSource):
+    
 
     def __init__(self) -> None:
         pass
