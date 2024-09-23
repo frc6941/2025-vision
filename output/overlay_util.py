@@ -1,6 +1,6 @@
 import cv2
 import numpy
-from config.config import ConfigStore
+from config_app.config import ConfigStore
 from vision_types import FiducialImageObservation, FiducialPoseObservation
 
 

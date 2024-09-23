@@ -1,6 +1,6 @@
 import cv2
-from config.ConfigSource import ConfigSource, FileConfigSource
-from config.config import ConfigStore, LocalConfig, RemoteConfig
+from config_app.ConfigSource import ConfigSource, FileConfigSource
+from config_app.config import ConfigStore, LocalConfig, RemoteConfig
 from pipeline.FiducialDetector import ArucoFiducialDetector
 from pipeline.PoseEstimator import SquareTargetPoseEstimator
 from wpimath.geometry import *
@@ -24,10 +24,10 @@ REFERENCE_POSE = Pose3d(
     inches_to_meters(171.52001866549656),
     inches_to_meters(17.163224225576677),
     Rotation3d(Quaternion(w=0.019125, x=-0.055698, y=0.016995, z=0.998120)))
-
+config = ConfigStore(LocalConfig(), RemoteConfig())
 
 if __name__ == "__main__":
-    config = ConfigStore(LocalConfig(), RemoteConfig())
+    
     local_config_source: ConfigSource = FileConfigSource()
     local_config_source.update(config)
     config.remote_config.fiducial_size_m = inches_to_meters(6.0)

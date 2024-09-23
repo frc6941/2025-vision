@@ -1,6 +1,6 @@
 import ntcore
 
-from config.config import ConfigStore
+from config_app.config import ConfigStore
 
 
 class CalibrationCommandSource:

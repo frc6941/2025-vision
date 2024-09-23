@@ -5,7 +5,7 @@ from typing import List
 import cv2
 import numpy
 
-from config.ConfigSource import FileConfigSource
+from config_app.ConfigSource import FileConfigSource
 
 
 class CalibrationSession:

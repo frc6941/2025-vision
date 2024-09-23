@@ -4,17 +4,18 @@ import cv2
 import ntcore
 import numpy
 
-from config.config import ConfigStore, RemoteConfig
+from config_app.config import ConfigStore, RemoteConfig
 
 
 class ConfigSource:
     def update(self, config_store: ConfigStore) -> None:
         raise NotImplementedError
 
-
-class FileConfigSource(ConfigSource):
+class ConfigFile:
     CONFIG_FILENAME = "config.json"
     CALIBRATION_FILENAME = "calibration.json"
+class FileConfigSource(ConfigSource):
+    
 
     def __init__(self) -> None:
         pass

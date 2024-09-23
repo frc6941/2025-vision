@@ -7,7 +7,7 @@ from io import BytesIO
 import cv2
 from PIL import Image
 
-from config.config import ConfigStore
+from config_app.config import ConfigStore
 
 
 class StreamServer:
