@@ -15,6 +15,7 @@ from output.overlay_util import *
 from output.StreamServer import MjpegServer
 from pipeline.CameraPoseEstimator import MultiTargetCameraPoseEstimator
 from pipeline.Capture import GStreamerCapture
+from pipeline.Capture import DefaultCapture
 from pipeline.FiducialDetector import ArucoFiducialDetector
 from pipeline.PoseEstimator import SquareTargetPoseEstimator
 
@@ -26,7 +27,8 @@ if __name__ == "__main__":
     remote_config_source: ConfigSource = NTConfigSource()
     calibration_command_source: CalibrationCommandSource = NTCalibrationCommandSource()
 
-    capture = GStreamerCapture()
+    # capture = GStreamerCapture()  # linux only
+    capture = DefaultCapture()  # other platforms
     fiducial_detector = ArucoFiducialDetector(cv2.aruco.DICT_APRILTAG_36h11)
     camera_pose_estimator = MultiTargetCameraPoseEstimator()
     tag_pose_estimator = SquareTargetPoseEstimator()
