@@ -32,7 +32,7 @@ class Capture:
 
 
 class DefaultCapture(Capture):
-    """"Read from camera with default OpenCV config."""
+    """Read from camera with default OpenCV config."""
 
     def __init__(self) -> None:
         pass
