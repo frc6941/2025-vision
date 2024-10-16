@@ -2,12 +2,13 @@ from output.NTTable import NTTable
 
 
 def init():
-    NTTable.init()
+    NTTable().init()
 
 
 def periodic():
-    NTTable.nt_table.putNumber("111", 11)
+    NTTable().nt_table.putNumber("111", 11)
 
 
+init()
 while True:
     periodic()

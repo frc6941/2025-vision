@@ -14,5 +14,6 @@ class Config:
             CameraAutoExposure: int = 1
             CameraExposure: int = 60
             CameraGain: int = 1
+
         class Calibration:
-            OnClibration = False
+            OnCalibration = False
