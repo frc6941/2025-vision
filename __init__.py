@@ -2,7 +2,7 @@ from output.NTTable import NTTable
 
 
 def init():
-    pass
+    NTTable.init()
 
 
 def periodic():
