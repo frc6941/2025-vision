@@ -6,7 +6,7 @@ def init():
 
 
 def periodic():
-    NTTable().periodic()
+    NTTable().getInstance().periodic()
 
 
 init()
