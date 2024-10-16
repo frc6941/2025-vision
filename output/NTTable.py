@@ -12,10 +12,13 @@ class NTTable:
     timeStampPublisher: ntcore.FloatPublisher
     nt_table = ntcore.NetworkTableInstance.getDefault().getTable(
         "/" + Config.NetworkConfig.DeviceName + "/output")
-    timeStampPublisher = nt_table.getFloatTopic("timestamp").publish()
+    timeStampPublisher = nt_table.getFloatTopic("timestamp").publish(
+        ntcore.PubSubOptions(periodic=0, sendAll=True, keepDuplicates=True))
     timeStampPublisher2 = nt_table.getFloatTopic("timestamp2").publish()
 
     def periodic(self):
         self.timeStampPublisher.set(time.time())
         self.timeStampPublisher2.set(self.i)
         self.i += 1
+        time.sleep(1)
+        self.timeStampPublisher2.set(self.i)
