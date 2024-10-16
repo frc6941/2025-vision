@@ -2,7 +2,7 @@ class Config:
     class NetworkConfig:
         CameraID: str = "200"  # USB ID to connect the camera
         DeviceName: str = "OrangePi5Plus1"
-        ServerIP: str = "10.96.20.2"
+        ServerIP: str = "127.0.0.1"
 
     class ConstantConfig:
         FiducialSize: float = 0.1675  # meter
