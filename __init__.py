@@ -6,7 +6,6 @@ def init():
 
 
 def periodic():
-    NTTable().nt_table.putNumber("111", 11)
     NTTable().periodic()
 
 

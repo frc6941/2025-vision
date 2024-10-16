@@ -14,4 +14,4 @@ class NTTable:
     timeStampPublisher = nt_table.getFloatTopic("timestamp").publish()
 
     def periodic(self):
-        self.timeStampPublisher.set(time.time().real)
+        self.timeStampPublisher.set(time.time())
