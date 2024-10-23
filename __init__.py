@@ -19,7 +19,7 @@ from pipeline.Capture import DefaultCapture
 from pipeline.FiducialDetector import ArucoFiducialDetector
 from pipeline.PoseEstimator import SquareTargetPoseEstimator
 
-DEMO_ID = 7
+DEMO_ID = 29
 
 if __name__ == "__main__":
     config = ConfigStore(LocalConfig(), RemoteConfig())
