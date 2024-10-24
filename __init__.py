@@ -86,7 +86,7 @@ if __name__ == "__main__":
     fps_count = manager.Value('i', 0)
 
     # create cpu_count() process
-    for i in range(cpu_count() - 1):
+    for i in range(cpu_count() - 2):
         pool.apply_async(func=imgProcesser, args=(queue_image, queue_time, queue_config, fps_count))
     pool.apply_async(func=imgPublisher, args=(queue_image, queue_time, queue_config, fps_count))
 
