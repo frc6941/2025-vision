@@ -29,10 +29,11 @@ def get_image_observations(q_in: Queue, q_out: Queue):
 
 if __name__ == "__main__":
     # multiprocessing to speed up
+    pool = Pool(cpu_count())
     queueIn = Manager().Queue()
     queueOut = Manager().Queue()
-    with Pool(cpu_count()) as pool:
-        pool.apply(func=get_image_observations, args=(queueIn, queueOut))
+    for i in range(cpu_count()):
+        pool.apply_async(func=get_image_observations, args=(queueIn, queueOut))
 
     config = ConfigStore(LocalConfig(), RemoteConfig())
     local_config_source: ConfigSource = FileConfigSource()
