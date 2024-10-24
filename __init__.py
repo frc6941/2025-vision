@@ -1,27 +1,39 @@
 import sys
 import time
+from multiprocessing import cpu_count, Pool, Queue, Manager
 from typing import Union
 
-import cv2
 import ntcore
 
 from calibration.CalibrationCommandSource import (CalibrationCommandSource,
                                                   NTCalibrationCommandSource)
 from calibration.CalibrationSession import CalibrationSession
-from config.config import ConfigStore, LocalConfig, RemoteConfig
 from config.ConfigSource import ConfigSource, FileConfigSource, NTConfigSource
+from config.config import LocalConfig, RemoteConfig
 from output.OutputPublisher import NTOutputPublisher, OutputPublisher
-from output.overlay_util import *
 from output.StreamServer import MjpegServer
+from output.overlay_util import *
 from pipeline.CameraPoseEstimator import MultiTargetCameraPoseEstimator
-from pipeline.Capture import GStreamerCapture
 from pipeline.Capture import DefaultCapture
 from pipeline.FiducialDetector import ArucoFiducialDetector
 from pipeline.PoseEstimator import SquareTargetPoseEstimator
 
 DEMO_ID = 29
 
+
+def get_image_observations(q_in: Queue, q_out: Queue):
+    while True:
+        if not q_in.empty():
+            q_out.put(fiducial_detector.detect_fiducials(q_in.get(), config))
+
+
 if __name__ == "__main__":
+    # multiprocessing to speed up
+    queueIn = Manager().Queue()
+    queueOut = Manager().Queue()
+    with Pool(cpu_count()) as pool:
+        pool.apply(func=get_image_observations, args=(queueIn, queueOut))
+
     config = ConfigStore(LocalConfig(), RemoteConfig())
     local_config_source: ConfigSource = FileConfigSource()
     remote_config_source: ConfigSource = NTConfigSource()
@@ -72,7 +84,10 @@ if __name__ == "__main__":
 
         elif config.local_config.has_calibration:
             # Normal mode
-            image_observations = fiducial_detector.detect_fiducials(image, config)
+            queueIn.put(image)
+            while queueOut.empty():
+                pass
+            image_observations = queueOut.get()
             [overlay_image_observation(image, x) for x in image_observations]
             camera_pose_observation = camera_pose_estimator.solve_camera_pose(
                 [x for x in image_observations if x.tag_id != DEMO_ID], config)

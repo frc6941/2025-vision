@@ -61,7 +61,7 @@ class DefaultCapture(Capture):
 
 
 class GStreamerCapture(Capture):
-    """"Read from camera with GStreamer."""
+    """Read from camera with GStreamer."""
 
     def __init__(self) -> None:
         pass
