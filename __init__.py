@@ -1,6 +1,7 @@
+import multiprocessing
 import sys
 import time
-from multiprocessing import cpu_count, Pool, Queue, Manager
+from multiprocessing import cpu_count, Pool, Manager
 from typing import Union
 
 import ntcore
@@ -21,17 +22,20 @@ from pipeline.PoseEstimator import SquareTargetPoseEstimator
 DEMO_ID = 29
 
 
-def get_image_observations(q_in: Queue, q_out: Queue):
+def get_image_observations(q_in, q_out):
     while True:
         if not q_in.empty():
-            q_out.put(fiducial_detector.detect_fiducials(q_in.get(), config))
+            image = q_in.get()
+            config = ConfigStore(LocalConfig(), RemoteConfig())
+            img = ArucoFiducialDetector(cv2.aruco.DICT_APRILTAG_36h11).detect_fiducials(image, config)
+            q_out.put(img)
 
 
 if __name__ == "__main__":
     # multiprocessing to speed up
     pool = Pool(cpu_count())
-    queueIn = Manager().Queue()
-    queueOut = Manager().Queue()
+    queueIn: multiprocessing.Queue = Manager().Queue(maxsize=cpu_count)
+    queueOut = Manager().Queue(maxsize=cpu_count)
     for i in range(cpu_count()):
         pool.apply_async(func=get_image_observations, args=(queueIn, queueOut))
 
@@ -85,18 +89,18 @@ if __name__ == "__main__":
 
         elif config.local_config.has_calibration:
             # Normal mode
-            queueIn.put(image)
-            while queueOut.empty():
-                pass
-            image_observations = queueOut.get()
-            [overlay_image_observation(image, x) for x in image_observations]
-            camera_pose_observation = camera_pose_estimator.solve_camera_pose(
-                [x for x in image_observations if x.tag_id != DEMO_ID], config)
-            demo_image_observations = [x for x in image_observations if x.tag_id == DEMO_ID]
-            demo_pose_observation: Union[FiducialPoseObservation, None] = None
-            if len(demo_image_observations) > 0:
-                demo_pose_observation = tag_pose_estimator.solve_fiducial_pose(demo_image_observations[0], config)
-            output_publisher.send(config, timestamp, camera_pose_observation, demo_pose_observation, fps)
+            while not queueIn.empty():
+                queueIn.put(image)
+            while not queueOut.empty():
+                image_observations = queueOut.get()
+                [overlay_image_observation(image, x) for x in image_observations]
+                camera_pose_observation = camera_pose_estimator.solve_camera_pose(
+                    [x for x in image_observations if x.tag_id != DEMO_ID], config)
+                demo_image_observations = [x for x in image_observations if x.tag_id == DEMO_ID]
+                demo_pose_observation: Union[FiducialPoseObservation, None] = None
+                if len(demo_image_observations) > 0:
+                    demo_pose_observation = tag_pose_estimator.solve_fiducial_pose(demo_image_observations[0], config)
+                output_publisher.send(config, timestamp, camera_pose_observation, demo_pose_observation, fps)
 
         else:
             # No calibration
