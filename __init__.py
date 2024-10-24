@@ -90,6 +90,10 @@ if __name__ == "__main__":
         elif config.local_config.has_calibration:
             # Normal mode
             while not queueIn.empty():
+                success, image = capture.get_frame(config)
+                if not success:
+                    time.sleep(0.5)
+                    continue
                 queueIn.put(image)
             while not queueOut.empty():
                 image_observations = queueOut.get()
