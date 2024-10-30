@@ -85,8 +85,9 @@ if __name__ == "__main__":
 
     # multiprocessing to speed up
     manager = multiprocessing.Manager()
-    pool = multiprocessing.Pool(cpu_count() - 1)
+    pool = multiprocessing.Pool(cpu_count() - 2)
     pool2 = multiprocessing.Pool(1)
+    pool3 = multiprocessing.Pool(1)
 
     # variables sharing between processes
     queue_image = manager.Queue()
@@ -96,9 +97,10 @@ if __name__ == "__main__":
     fps_count = manager.Value('i', 0)
 
     # create cpu_count() process
-    pool.apply_async(func=imgProcesser, args=(queue_image, queue_time, queue_config, queue_result, fps_count))
+    for i in range(cpu_count() - 2):
+        pool.apply_async(func=imgProcesser, args=(queue_image, queue_time, queue_config, queue_result, fps_count))
     pool2.apply_async(func=imgPublisher, args=(queue_image, queue_time, queue_config, fps_count))
-    pool2.apply_async(func=streaming, args=queue_result)
+    pool3.apply_async(func=streaming, args=queue_result)
 
     config = ConfigStore(LocalConfig(), RemoteConfig())
     local_config_source: ConfigSource = FileConfigSource()
