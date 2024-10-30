@@ -46,8 +46,7 @@ def imgProcesser(qImage: multiprocessing.Queue, qTime: multiprocessing.Queue, qC
             qResult.put(image)
 
 
-def imgPublisher(qImage: multiprocessing.Queue, qTime: multiprocessing.Queue, qConfig: multiprocessing.Queue,
-                 fps_count):
+def imgPublisher(qImage: multiprocessing.Queue, qTime: multiprocessing.Queue, qConfig: multiprocessing.Queue):
     capture = DefaultCapture()
     config = ConfigStore(LocalConfig(), RemoteConfig())
     remote_config_source: ConfigSource = NTConfigSource()
@@ -66,10 +65,9 @@ def imgPublisher(qImage: multiprocessing.Queue, qTime: multiprocessing.Queue, qC
             qImage.put(image)
             qTime.put(time.time())
             qConfig.put(config)
-            fps_count.value += 1
 
 
-def streaming(qResult: multiprocessing.Queue):
+def streaming(qResult: multiprocessing.Queue, fps_count):
     print(11)
     config = ConfigStore(LocalConfig(), RemoteConfig())
     # start stream server
@@ -78,6 +76,7 @@ def streaming(qResult: multiprocessing.Queue):
     while True:
         if not qResult.empty():
             stream_server.set_frame(qResult.get())
+            fps_count.value += 1
 
 
 if __name__ == "__main__":
@@ -99,8 +98,8 @@ if __name__ == "__main__":
     # create cpu_count() process
     for i in range(cpu_count() - 3):
         pool.apply_async(func=imgProcesser, args=(queue_image, queue_time, queue_config, queue_result, fps_count))
-    pool2.apply_async(func=imgPublisher, args=(queue_image, queue_time, queue_config, fps_count))
-    pool3.apply_async(func=streaming, args=queue_result)
+    pool2.apply_async(func=imgPublisher, args=(queue_image, queue_time, queue_config))
+    pool3.apply_async(func=streaming, args=(queue_result, fps_count))
 
     config = ConfigStore(LocalConfig(), RemoteConfig())
     local_config_source: ConfigSource = FileConfigSource()
