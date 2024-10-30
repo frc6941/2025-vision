@@ -98,7 +98,7 @@ if __name__ == "__main__":
     for i in range(cpu_count() - 3):
         pool.apply_async(func=imgProcesser, args=(queue_image, queue_time, queue_config, queue_result, fps_count))
     pool.apply_async(func=imgPublisher, args=(queue_image, queue_time, queue_config, fps_count))
-    pool.apply_async(func=streaming, args=queue_result)
+    pool.map_async(func=streaming, args=queue_result)
 
     config = ConfigStore(LocalConfig(), RemoteConfig())
     local_config_source: ConfigSource = FileConfigSource()
