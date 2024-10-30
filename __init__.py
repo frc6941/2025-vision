@@ -68,7 +68,6 @@ def imgPublisher(qImage: multiprocessing.Queue, qTime: multiprocessing.Queue, qC
 
 
 def streaming(qResult: multiprocessing.Queue, fps_count):
-    print(11)
     config = ConfigStore(LocalConfig(), RemoteConfig())
     # start stream server
     stream_server = MjpegServer()
