@@ -72,9 +72,12 @@ def streaming(qResult: multiprocessing.Queue, fps_count):
     # start stream server
     stream_server = MjpegServer()
     stream_server.start(config)
+    cnt = 0
     while True:
         if not qResult.empty():
-            stream_server.set_frame(qResult.get())
+            cnt += 1
+            if cnt % 2 != 0:
+                stream_server.set_frame(qResult.get())
             fps_count.value += 1
 
 
