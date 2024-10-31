@@ -19,10 +19,6 @@ class Capture:
         """Return the next frame from the camera."""
         raise NotImplementedError
 
-    def drop_frame(self) -> None:
-        """Drop a frame to save time"""
-        raise NotImplementedError
-
     @classmethod
     def _config_changed(cls, config_a: ConfigStore, config_b: ConfigStore) -> bool:
         if config_a == None and config_b == None:
@@ -64,9 +60,6 @@ class DefaultCapture(Capture):
 
         retval, image = self._video.read()
         return retval, image
-
-    def drop_frame(self) -> None:
-        retval = self._video.grab()
 
 
 class GStreamerCapture(Capture):

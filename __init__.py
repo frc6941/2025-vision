@@ -50,15 +50,7 @@ def imgPublisher(qImage: multiprocessing.Queue, qTime: multiprocessing.Queue, qC
     capture = DefaultCapture()
     config = ConfigStore(LocalConfig(), RemoteConfig())
     remote_config_source: ConfigSource = NTConfigSource()
-    cnt = 0
-    skip_freq = 5
     while True:
-        # skip frame
-        cnt += 1
-        if cnt % skip_freq == 0:
-            capture.drop_frame()
-            cnt = 0
-            
         # update config
         remote_config_source.update(config)
 
