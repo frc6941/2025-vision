@@ -79,4 +79,4 @@ class NTOutputPublisher(OutputPublisher):
         self._observations_pub.set(observation_data, math.floor(timestamp * 1000000))
         self._demo_observations_pub.set(demo_observation_data, math.floor(timestamp * 1000000))
 
-        print(1111)
+        print(1)
