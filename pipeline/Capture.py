@@ -54,7 +54,7 @@ class DefaultCapture(Capture):
             self._video.set(cv2.CAP_PROP_AUTO_EXPOSURE, config_store.remote_config.camera_auto_exposure)
             self._video.set(cv2.CAP_PROP_EXPOSURE, config_store.remote_config.camera_exposure)
             self._video.set(cv2.CAP_PROP_GAIN, config_store.remote_config.camera_gain)
-            self._video.set(cv2.CAP_PROP_BUFFERSIZE, 0)
+            self._video.set(cv2.CAP_PROP_BUFFERSIZE, 1)
 
         self._last_config = config_store
 
