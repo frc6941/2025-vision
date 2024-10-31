@@ -76,11 +76,14 @@ def streaming(qResult: multiprocessing.Queue, fps_count):
     while True:
         if not qResult.empty():
             cnt += 1
-            if cnt % 2 != 0:
+            if cnt % 3 == 0:
                 stream_server.set_frame(qResult.get())
             else:
-                qResult.get()
+                # qResult.get()
+                pass
             fps_count.value += 1
+        else:
+            print(111)
 
 
 if __name__ == "__main__":
