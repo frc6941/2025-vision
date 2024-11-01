@@ -22,7 +22,7 @@ from pipeline.PoseEstimator import SquareTargetPoseEstimator
 DEMO_ID = 29
 
 
-def imgProcesser(qImage: multiprocessing.Queue, qTime: multiprocessing.Queue, qConfig: multiprocessing.Queue,
+def imgProcessor(qImage: multiprocessing.Queue, qTime: multiprocessing.Queue, qConfig: multiprocessing.Queue,
                  qResult: multiprocessing.Queue, fps_count):
     output_publisher: OutputPublisher = NTOutputPublisher()
     fiducial_detector = ArucoFiducialDetector(cv2.aruco.DICT_APRILTAG_36h11)
@@ -72,17 +72,20 @@ def streaming(qResult: multiprocessing.Queue, fps_count):
     # start stream server
     stream_server = MjpegServer()
     stream_server.start(config)
+    # show 1 frame every display_freq frames
     cnt = 0
+    display_freq = 5
     while True:
         if not qResult.empty():
             cnt += 1
-            if cnt % 5 == 0:
+            if cnt % display_freq == 0:
                 stream_server.set_frame(qResult.get())
+                cnt = 0
             else:
                 qResult.get()
             fps_count.value += 1
-        else:
-            print(111)
+        # else:
+        #     print(111)
 
 
 if __name__ == "__main__":
@@ -103,7 +106,7 @@ if __name__ == "__main__":
 
     # create cpu_count() process
     for i in range(cpu_count() - 3):
-        pool.apply_async(func=imgProcesser, args=(queue_image, queue_time, queue_config, queue_result, fps_count))
+        pool.apply_async(func=imgProcessor, args=(queue_image, queue_time, queue_config, queue_result, fps_count))
     pool2.apply_async(func=imgPublisher, args=(queue_image, queue_time, queue_config))
     pool3.apply_async(func=streaming, args=(queue_result, fps_count))
 
