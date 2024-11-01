@@ -12,6 +12,7 @@ class CalibrationSession:
     _all_charuco_corners: List[numpy.ndarray] = []
     _all_charuco_ids: List[numpy.ndarray] = []
     _imsize = None
+    _picture_cnt: int = 0
 
     def __init__(self) -> None:
         self._aruco_dict = cv2.aruco.Dictionary_get(cv2.aruco.DICT_5X5_1000)
@@ -37,9 +38,10 @@ class CalibrationSession:
 
                 # Save corners
                 if save:
+                    self._picture_cnt += 1
                     self._all_charuco_corners.append(charuco_corners)
                     self._all_charuco_ids.append(charuco_ids)
-                    print("Saved calibration frame")
+                    print("Saved, %d calibration frame(s) in total" % self._picture_cnt)
 
     def finish(self) -> None:
         if len(self._all_charuco_corners) == 0:
