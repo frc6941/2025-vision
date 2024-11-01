@@ -46,27 +46,6 @@ def imgProcessor(qImage: multiprocessing.Queue, qTime: multiprocessing.Queue, qC
             qResult.put(image)
 
 
-def imgPublisher(qImage: multiprocessing.Queue, qTime: multiprocessing.Queue, qConfig: multiprocessing.Queue):
-    capture = DefaultCapture()
-    config = ConfigStore(LocalConfig(), RemoteConfig())
-    remote_config_source: ConfigSource = NTConfigSource()
-    while True:
-        # update config
-        remote_config_source.update(config)
-
-        # get image
-        success, image = capture.get_frame(config)
-        if not success:
-            print("Failed to get image")
-            time.sleep(0.5)
-
-        # publish image with timestamp & config if processes aren't working
-        elif qImage.empty():
-            qImage.put(image)
-            qTime.put(time.time())
-            qConfig.put(config)
-
-
 def streaming(qResult: multiprocessing.Queue, fps_count):
     config = ConfigStore(LocalConfig(), RemoteConfig())
     # start stream server
@@ -95,7 +74,6 @@ if __name__ == "__main__":
     manager = multiprocessing.Manager()
     pool = multiprocessing.Pool(processes=cpu_count() - 3)
     pool2 = multiprocessing.Pool(processes=1)
-    pool3 = multiprocessing.Pool(processes=1)
 
     # variables sharing between processes
     queue_image = manager.Queue()
@@ -107,8 +85,7 @@ if __name__ == "__main__":
     # create cpu_count() process
     for i in range(cpu_count() - 3):
         pool.apply_async(func=imgProcessor, args=(queue_image, queue_time, queue_config, queue_result, fps_count))
-    pool2.apply_async(func=imgPublisher, args=(queue_image, queue_time, queue_config))
-    pool3.apply_async(func=streaming, args=(queue_result, fps_count))
+    pool2.apply_async(func=streaming, args=(queue_result, fps_count))
 
     config = ConfigStore(LocalConfig(), RemoteConfig())
     local_config_source: ConfigSource = FileConfigSource()
@@ -117,12 +94,14 @@ if __name__ == "__main__":
 
     # calibration setting
     calibration_session = CalibrationSession()
+    calibrating = False
 
     # start NT4
     local_config_source.update(config)
     ntcore.NetworkTableInstance.getDefault().setServer(config.local_config.server_ip)
     ntcore.NetworkTableInstance.getDefault().startClient4(config.local_config.device_id)
 
+    # fps_counting
     last_print = 0
 
     while True:
@@ -135,25 +114,32 @@ if __name__ == "__main__":
             print("Running at", fps_count.value, "fps")
             fps_count.value = 0
 
-        # check if calibrating
-        while calibration_command_source.get_calibrating(config):
-            # terminate processes to get image in main process
-            pool.terminate()
-            while True:
-                # get image
-                success, image = capture.get_frame(config)
-                while not success:
-                    print("Failed to get image")
-                    time.sleep(0.5)
-                    success, image = capture.get_frame(config)
+        # get image
+        success, image = capture.get_frame(config)
+        while not success:
+            print("Failed to get image")
+            time.sleep(0.5)
+            success, image = capture.get_frame(config)
 
-                # calib
-                calibration_session.process_frame(image, calibration_command_source.get_capture_flag(config))
+        # publish image with timestamp & config if processes aren't working
+        if queue_image.empty():
+            queue_image.put(image)
+            queue_time.put(time.time())
+            queue_config.put(config)
 
-                # Finish calibration
-                if not calibration_command_source.get_calibrating(config):
-                    calibration_session.finish()
-                    sys.exit(0)
+        # Start calibration
+        if calibration_command_source.get_calibrating(config):
+            if not calibrating:
+                # terminate processes to get image in main process
+                pool.terminate()
+                calibrating = True
+            # calib
+            calibration_session.process_frame(image, calibration_command_source.get_capture_flag(config))
+
+        elif calibrating:
+            # Finish calibration
+            calibration_session.finish()
+            sys.exit(0)
 
         if not config.local_config.has_calibration:
             print("No calibration found")
