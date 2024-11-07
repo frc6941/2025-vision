@@ -42,6 +42,7 @@ def imgProcessor(qImage: multiprocessing.Queue, qTime: multiprocessing.Queue, qC
             demo_pose_observation: Union[FiducialPoseObservation, None] = None
             if len(demo_image_observations) > 0:
                 demo_pose_observation = tag_pose_estimator.solve_fiducial_pose(demo_image_observations[0], pConfig)
+            print(22)
             # a = DetectResult(config=pConfig, time=pTime, observation=camera_pose_observation,
             #                  demo_observation=demo_pose_observation,
             #                  fps_count=fps_count.value)
@@ -147,7 +148,7 @@ if __name__ == "__main__":
         if not queue_observation_result.empty():
             observation_result = queue_observation_result.get()
             output_publisher.send(observation_result.config, observation_result.time, observation_result.observation,
-                                  observation_result.demo_observation, observation_result.fps_count, )
+                                  observation_result.demo_observation, observation_result.fps_count)
 
         # Start calibration
         if calibration_command_source.get_calibrating(config):
