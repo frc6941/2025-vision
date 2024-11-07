@@ -24,7 +24,7 @@ DEMO_ID = 29
 
 
 def imgProcessor(qImage: multiprocessing.Queue, qTime: multiprocessing.Queue, qConfig: multiprocessing.Queue,
-                 qResult: multiprocessing.Queue, qObervationResult: multiprocessing.Queue, fps_count):
+                 qResult: multiprocessing.Queue, qObservationResult: multiprocessing.Queue, fps_count):
     fiducial_detector = ArucoFiducialDetector(cv2.aruco.DICT_APRILTAG_36h11)
     # estimator
     camera_pose_estimator = MultiTargetCameraPoseEstimator()
@@ -52,8 +52,9 @@ def imgProcessor(qImage: multiprocessing.Queue, qTime: multiprocessing.Queue, qC
             # a.observation = camera_pose_observation
             # a.demo_observation = demo_pose_observation
             # a.time = pTime
-            print(fps_count.value, pConfig, camera_pose_observation, demo_pose_observation, pTime)
-            # qObervationResult.put(a)
+            # print(fps_count.value, pConfig, camera_pose_observation, demo_pose_observation, pTime)
+            a = DetectResult(fps_count.value, pConfig, camera_pose_observation, demo_pose_observation, pTime)
+            qObservationResult.put(a)
             qResult.put(image)
         print(33)
 
@@ -172,20 +173,20 @@ if __name__ == "__main__":
 
 
 class DetectResult:
-    # def __init__(self, config: ConfigStore,
-    #              time: float,
-    #              observation: Union[CameraPoseObservation, None],
-    #              demo_observation: Union[FiducialPoseObservation, None],
-    #              fps_count: int):
-    #     self.config: ConfigStore = config
-    #     self.time: float = time
-    #     self.observation: Union[CameraPoseObservation, None] = observation
-    #     self.demo_observation: Union[FiducialPoseObservation, None] = demo_observation
-    #     self.fps_count: int = fps_count
+    def __init__(self, config: ConfigStore,
+                 time: float,
+                 observation: Union[CameraPoseObservation, None],
+                 demo_observation: Union[FiducialPoseObservation, None],
+                 fps_count: int):
+        self.config: ConfigStore = config
+        self.time: float = time
+        self.observation: Union[CameraPoseObservation, None] = observation
+        self.demo_observation: Union[FiducialPoseObservation, None] = demo_observation
+        self.fps_count: int = fps_count
 
-    def __init__(self):
-        self.config: ConfigStore
-        self.time: float
-        self.observation: Union[CameraPoseObservation, None]
-        self.demo_observation: Union[FiducialPoseObservation, None]
-        self.fps_count: int
+    # def __init__(self):
+    #     self.config: ConfigStore
+    #     self.time: float
+    #     self.observation: Union[CameraPoseObservation, None]
+    #     self.demo_observation: Union[FiducialPoseObservation, None]
+    #     self.fps_count: int
