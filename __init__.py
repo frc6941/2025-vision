@@ -54,7 +54,8 @@ def imgProcessor(qImage: multiprocessing.Queue, qTime: multiprocessing.Queue, qC
             # a.demo_observation = demo_pose_observation
             # a.time = pTime
             # print(fps_count.value, pConfig, camera_pose_observation, demo_pose_observation, pTime)
-            a = DetectResult(fps_count.value, pConfig, camera_pose_observation, demo_pose_observation, pTime)
+            a = DetectResult(fps_count=fps_count.value, config=pConfig, observation=camera_pose_observation,
+                             demo_observation=demo_pose_observation, time=pTime)
             qObservationResult.put_nowait(a)
             qResult.put(image)
         # print(33)
