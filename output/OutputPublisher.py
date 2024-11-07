@@ -23,7 +23,6 @@ class NTOutputPublisher(OutputPublisher):
              demo_observation: Union[FiducialPoseObservation, None], fps: Union[int, None] = None) -> None:
         # Initialize publishers on first call
         if not self._init_complete:
-            print(2)
             self._init_complete = True
             nt_table = ntcore.NetworkTableInstance.getDefault().getTable(
                 "/" + config_store.local_config.device_id + "/output")
@@ -39,7 +38,6 @@ class NTOutputPublisher(OutputPublisher):
         observation_data: List[float] = [0]
         demo_observation_data: List[float] = []
         if observation != None:
-            print(3)
             observation_data[0] = 1
             observation_data.append(observation.error_0)
             observation_data.append(observation.pose_0.translation().X())

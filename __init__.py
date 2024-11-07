@@ -18,13 +18,13 @@ from pipeline.CameraPoseEstimator import MultiTargetCameraPoseEstimator
 from pipeline.Capture import DefaultCapture
 from pipeline.FiducialDetector import ArucoFiducialDetector
 from pipeline.PoseEstimator import SquareTargetPoseEstimator
+from vision_types import CameraPoseObservation, FiducialPoseObservation
 
 DEMO_ID = 29
 
 
 def imgProcessor(qImage: multiprocessing.Queue, qTime: multiprocessing.Queue, qConfig: multiprocessing.Queue,
-                 qResult: multiprocessing.Queue, fps_count):
-    output_publisher: OutputPublisher = NTOutputPublisher()
+                 qResult: multiprocessing.Queue, qObervationResult: multiprocessing.Queue, fps_count):
     fiducial_detector = ArucoFiducialDetector(cv2.aruco.DICT_APRILTAG_36h11)
     # estimator
     camera_pose_estimator = MultiTargetCameraPoseEstimator()
@@ -42,7 +42,10 @@ def imgProcessor(qImage: multiprocessing.Queue, qTime: multiprocessing.Queue, qC
             demo_pose_observation: Union[FiducialPoseObservation, None] = None
             if len(demo_image_observations) > 0:
                 demo_pose_observation = tag_pose_estimator.solve_fiducial_pose(demo_image_observations[0], pConfig)
-            output_publisher.send(pConfig, pTime, camera_pose_observation, demo_pose_observation, fps_count.value)
+            qObervationResult.put(
+                DetectResult.__init__(config=pConfig, time=pTime, observation=camera_pose_observation,
+                                      demo_observation=demo_pose_observation,
+                                      fps_count=fps_count.value))
             qResult.put(image)
 
 
@@ -81,11 +84,13 @@ if __name__ == "__main__":
     queue_time = manager.Queue()
     queue_config = manager.Queue()
     queue_result = manager.Queue()
+    queue_observation_result = manager.Queue()
     fps_count = manager.Value('i', 0)
 
     # create cpu_count() process
     for i in range(cpu_count() - 2):
-        pool.apply_async(func=imgProcessor, args=(queue_image, queue_time, queue_config, queue_result, fps_count))
+        pool.apply_async(func=imgProcessor, args=(
+            queue_image, queue_time, queue_config, queue_result, queue_observation_result, fps_count))
     pool2.apply_async(func=streaming, args=(queue_result, fps_count))
 
     config = ConfigStore(LocalConfig(), RemoteConfig())
@@ -104,6 +109,9 @@ if __name__ == "__main__":
 
     # fps_counting
     last_print = 0
+
+    # publish output
+    output_publisher: OutputPublisher = NTOutputPublisher()
 
     while True:
         # update config
@@ -128,6 +136,12 @@ if __name__ == "__main__":
             queue_time.put(time.time())
             queue_config.put(config)
 
+        # publish result
+        if not queue_observation_result.empty():
+            observation_result = queue_observation_result.get()
+            output_publisher.send(observation_result.config, observation_result.time, observation_result.observation,
+                                  observation_result.demo_observation, observation_result.fps_count, )
+
         # Start calibration
         if calibration_command_source.get_calibrating(config):
             if not calibrating:
@@ -145,3 +159,16 @@ if __name__ == "__main__":
         if not config.local_config.has_calibration:
             print("No calibration found")
             time.sleep(0.5)
+
+
+class DetectResult:
+    def __init__(self, config: ConfigStore,
+                 time: float,
+                 observation: Union[CameraPoseObservation, None],
+                 demo_observation: Union[FiducialPoseObservation, None],
+                 fps_count: int):
+        self.config: ConfigStore = config
+        self.time: float = time
+        self.observation: Union[CameraPoseObservation, None] = observation
+        self.demo_observation: Union[FiducialPoseObservation, None] = demo_observation
+        self.fps_count: int = fps_count
