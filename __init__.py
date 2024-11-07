@@ -53,7 +53,6 @@ def imgProcessor(qImage: multiprocessing.Queue, qTime: multiprocessing.Queue, qC
             a.demo_observation = demo_pose_observation
             a.time = pTime
             qObervationResult.put(a)
-            print(a)
             qResult.put(image)
 
 
