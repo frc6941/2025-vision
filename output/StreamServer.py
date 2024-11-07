@@ -74,9 +74,10 @@ class MjpegServer(StreamServer):
                                 time.sleep(0.1)
                             else:
                                 # TODO: remote config
-                                pil_im = cv2.resize(Image.fromarray(self_mjpeg._frame), (
-                                    ConfigStore.remote_config.camera_resolution_height * 0.5,
-                                    ConfigStore.remote_config.camera_resolution_width * 0.5))
+                                # pil_im = cv2.resize(Image.fromarray(self_mjpeg._frame), (
+                                #     ConfigStore.remote_config.camera_resolution_height * 0.5,
+                                #     ConfigStore.remote_config.camera_resolution_width * 0.5))
+                                pil_im = Image.fromarray(self_mjpeg._frame)
                                 stream = BytesIO()
                                 pil_im.save(stream, format="JPEG")
                                 frame_data = stream.getvalue()
