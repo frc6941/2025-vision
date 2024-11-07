@@ -42,9 +42,15 @@ def imgProcessor(qImage: multiprocessing.Queue, qTime: multiprocessing.Queue, qC
             demo_pose_observation: Union[FiducialPoseObservation, None] = None
             if len(demo_image_observations) > 0:
                 demo_pose_observation = tag_pose_estimator.solve_fiducial_pose(demo_image_observations[0], pConfig)
-            a = DetectResult(config=pConfig, time=pTime, observation=camera_pose_observation,
-                             demo_observation=demo_pose_observation,
-                             fps_count=fps_count.value)
+            # a = DetectResult(config=pConfig, time=pTime, observation=camera_pose_observation,
+            #                  demo_observation=demo_pose_observation,
+            #                  fps_count=fps_count.value)
+            a = DetectResult()
+            a.fps_count = fps_count.value
+            a.config = pConfig
+            a.observation = camera_pose_observation
+            a.demo_observation = demo_pose_observation
+            a.time = pTime
             qObervationResult.put(a)
             print(a)
             qResult.put(image)
@@ -173,3 +179,10 @@ class DetectResult:
         self.observation: Union[CameraPoseObservation, None] = observation
         self.demo_observation: Union[FiducialPoseObservation, None] = demo_observation
         self.fps_count: int = fps_count
+
+    def __init__(self):
+        self.config: ConfigStore
+        self.time: float
+        self.observation: Union[CameraPoseObservation, None]
+        self.demo_observation: Union[FiducialPoseObservation, None]
+        self.fps_count: int
