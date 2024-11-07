@@ -56,7 +56,7 @@ def imgProcessor(qImage: multiprocessing.Queue, qTime: multiprocessing.Queue, qC
             a = DetectResult(fps_count.value, pConfig, camera_pose_observation, demo_pose_observation, pTime)
             qObservationResult.put(a)
             qResult.put(image)
-        print(33)
+        # print(33)
 
 
 def streaming(qResult: multiprocessing.Queue, fps_count):
@@ -94,7 +94,7 @@ if __name__ == "__main__":
     queue_time = manager.Queue()
     queue_config = manager.Queue()
     queue_result = manager.Queue()
-    queue_observation_result = manager.Queue()
+    queue_observation_result = multiprocessing.Queue()
     fps_count = manager.Value('i', 0)
 
     # create cpu_count() process
@@ -183,6 +183,7 @@ class DetectResult:
         self.observation: Union[CameraPoseObservation, None] = observation
         self.demo_observation: Union[FiducialPoseObservation, None] = demo_observation
         self.fps_count: int = fps_count
+        print("created")
 
     # def __init__(self):
     #     self.config: ConfigStore
