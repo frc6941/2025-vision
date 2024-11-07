@@ -170,16 +170,16 @@ if __name__ == "__main__":
 
 
 class DetectResult:
-    def __init__(self, config: ConfigStore,
-                 time: float,
-                 observation: Union[CameraPoseObservation, None],
-                 demo_observation: Union[FiducialPoseObservation, None],
-                 fps_count: int):
-        self.config: ConfigStore = config
-        self.time: float = time
-        self.observation: Union[CameraPoseObservation, None] = observation
-        self.demo_observation: Union[FiducialPoseObservation, None] = demo_observation
-        self.fps_count: int = fps_count
+    # def __init__(self, config: ConfigStore,
+    #              time: float,
+    #              observation: Union[CameraPoseObservation, None],
+    #              demo_observation: Union[FiducialPoseObservation, None],
+    #              fps_count: int):
+    #     self.config: ConfigStore = config
+    #     self.time: float = time
+    #     self.observation: Union[CameraPoseObservation, None] = observation
+    #     self.demo_observation: Union[FiducialPoseObservation, None] = demo_observation
+    #     self.fps_count: int = fps_count
 
     def __init__(self):
         self.config: ConfigStore
