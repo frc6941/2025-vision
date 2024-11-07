@@ -54,6 +54,7 @@ def imgProcessor(qImage: multiprocessing.Queue, qTime: multiprocessing.Queue, qC
             a.time = pTime
             qObervationResult.put(a)
             qResult.put(image)
+        print(33)
 
 
 def streaming(qResult: multiprocessing.Queue, fps_count):
@@ -145,6 +146,7 @@ if __name__ == "__main__":
 
         # publish result
         if not queue_observation_result.empty():
+            print(44)
             observation_result = queue_observation_result.get()
             output_publisher.send(observation_result.config, observation_result.time, observation_result.observation,
                                   observation_result.demo_observation, observation_result.fps_count)
