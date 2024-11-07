@@ -11,6 +11,7 @@ from calibration.CalibrationCommandSource import (CalibrationCommandSource,
 from calibration.CalibrationSession import CalibrationSession
 from config.ConfigSource import ConfigSource, FileConfigSource, NTConfigSource
 from config.config import LocalConfig, RemoteConfig
+from output.DetectResult import DetectResult
 from output.OutputPublisher import NTOutputPublisher, OutputPublisher
 from output.StreamServer import MjpegServer
 from output.overlay_util import *
@@ -18,7 +19,7 @@ from pipeline.CameraPoseEstimator import MultiTargetCameraPoseEstimator
 from pipeline.Capture import DefaultCapture
 from pipeline.FiducialDetector import ArucoFiducialDetector
 from pipeline.PoseEstimator import SquareTargetPoseEstimator
-from vision_types import CameraPoseObservation, FiducialPoseObservation
+from vision_types import FiducialPoseObservation
 
 DEMO_ID = 29
 
@@ -54,7 +55,7 @@ def imgProcessor(qImage: multiprocessing.Queue, qTime: multiprocessing.Queue, qC
             # a.time = pTime
             # print(fps_count.value, pConfig, camera_pose_observation, demo_pose_observation, pTime)
             a = DetectResult(fps_count.value, pConfig, camera_pose_observation, demo_pose_observation, pTime)
-            qObservationResult.put(a)
+            qObservationResult.put_nowait(a)
             qResult.put(image)
         # print(33)
 
@@ -94,7 +95,7 @@ if __name__ == "__main__":
     queue_time = manager.Queue()
     queue_config = manager.Queue()
     queue_result = manager.Queue()
-    queue_observation_result = multiprocessing.Queue()
+    queue_observation_result = manager.Queue()
     fps_count = manager.Value('i', 0)
 
     # create cpu_count() process
@@ -149,9 +150,11 @@ if __name__ == "__main__":
         # publish result
         if not queue_observation_result.empty():
             print(44)
-            observation_result = queue_observation_result.get()
-            output_publisher.send(observation_result.config, observation_result.time, observation_result.observation,
-                                  observation_result.demo_observation, observation_result.fps_count)
+            observation_result: DetectResult = queue_observation_result.get()
+            output_publisher.send(config_store=observation_result.config, timestamp=observation_result.time,
+                                  observation=observation_result.observation,
+                                  demo_observation=observation_result.demo_observation,
+                                  fps=observation_result.fps_count)
 
         # Start calibration
         if calibration_command_source.get_calibrating(config):
@@ -170,24 +173,3 @@ if __name__ == "__main__":
         if not config.local_config.has_calibration:
             print("No calibration found")
             time.sleep(0.5)
-
-
-class DetectResult:
-    def __init__(self, config: ConfigStore,
-                 time: float,
-                 observation: Union[CameraPoseObservation, None],
-                 demo_observation: Union[FiducialPoseObservation, None],
-                 fps_count: int):
-        self.config: ConfigStore = config
-        self.time: float = time
-        self.observation: Union[CameraPoseObservation, None] = observation
-        self.demo_observation: Union[FiducialPoseObservation, None] = demo_observation
-        self.fps_count: int = fps_count
-        print("created")
-
-    # def __init__(self):
-    #     self.config: ConfigStore
-    #     self.time: float
-    #     self.observation: Union[CameraPoseObservation, None]
-    #     self.demo_observation: Union[FiducialPoseObservation, None]
-    #     self.fps_count: int
