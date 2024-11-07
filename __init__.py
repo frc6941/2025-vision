@@ -52,6 +52,7 @@ def streaming(qResult: multiprocessing.Queue, fps_count):
     stream_server = MjpegServer()
     stream_server.start(config)
     # show 1 frame every display_freq frames
+    # TODO: remote config
     cnt = 0
     display_freq = 5
     while True:
@@ -72,7 +73,7 @@ if __name__ == "__main__":
 
     # multiprocessing to speed up
     manager = multiprocessing.Manager()
-    pool = multiprocessing.Pool(processes=cpu_count() - 3)
+    pool = multiprocessing.Pool(processes=cpu_count() - 2)
     pool2 = multiprocessing.Pool(processes=1)
 
     # variables sharing between processes
@@ -83,7 +84,7 @@ if __name__ == "__main__":
     fps_count = manager.Value('i', 0)
 
     # create cpu_count() process
-    for i in range(cpu_count() - 3):
+    for i in range(cpu_count() - 2):
         pool.apply_async(func=imgProcessor, args=(queue_image, queue_time, queue_config, queue_result, fps_count))
     pool2.apply_async(func=streaming, args=(queue_result, fps_count))
 
