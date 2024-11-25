@@ -6,7 +6,7 @@ import numpy.typing
 @dataclass
 class LocalConfig:
     # edit it in config.json
-    device_id: str = "orangePi5Plus1"
+    device_id: str = "northstar_0"
     server_ip: str = "10.96.20.2"
     stream_port: int = 8000
     has_calibration: bool = True #TODO: calib

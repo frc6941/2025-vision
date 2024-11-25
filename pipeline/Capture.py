@@ -45,7 +45,10 @@ class DefaultCapture(Capture):
             print("Restarting capture session")
             self._video.release()
             self._video = None
-
+        #if self._last_config != None:
+        #    print(self._last_config.remote_config.camera_exposure)
+        if config_store !=None:
+            print(config_store.remote_config.camera_exposure)
         if self._video == None:
             self._video = cv2.VideoCapture(int(config_store.remote_config.camera_id))
             self._video.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
@@ -59,8 +62,11 @@ class DefaultCapture(Capture):
             self._video.set(cv2.CAP_PROP_BRIGHTNESS, 35)
             self._video.set(cv2.CAP_PROP_CONTRAST, 60)
             self._video.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+            print(333)
 
-        self._last_config = config_store
+        #self._last_config = config_store
+        self._last_config = ConfigStore(dataclasses.replace(config_store.local_config),
+                                        dataclasses.replace(config_store.remote_config))
 
         retval, image = self._video.read()
         return retval, image
