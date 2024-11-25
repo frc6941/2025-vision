@@ -47,9 +47,11 @@ class DefaultCapture(Capture):
             self._video = None
 
         if self._video == None:
-            self._video = cv2.VideoCapture(int(config_store.remote_config.camera_id))
-            self._video.set(cv2.CAP_PROP_FRAME_WIDTH, config_store.remote_config.camera_resolution_width)
-            self._video.set(cv2.CAP_PROP_FRAME_HEIGHT, config_store.remote_config.camera_resolution_height)
+            self._video = cv2.VideoCapture(2, cv2.CAP_V4L)
+            self._video.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
+            self._video.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+            self._video.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+            self._video.set(cv2.CAP_PROP_FPS, 120)
             self._video.set(cv2.CAP_PROP_AUTO_EXPOSURE, 3) 
             self._video.set(cv2.CAP_PROP_AUTO_EXPOSURE, 1)
             self._video.set(cv2.CAP_PROP_EXPOSURE, 250)
@@ -58,7 +60,6 @@ class DefaultCapture(Capture):
             self._video.set(cv2.CAP_PROP_GAIN, 0)
 
         self._last_config = config_store
-
         retval, image = self._video.read()
         return retval, image
 
