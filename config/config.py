@@ -19,8 +19,8 @@ class RemoteConfig:
     camera_id: str = "200"
     camera_resolution_width: int = 1280
     camera_resolution_height: int = 720
-    camera_auto_exposure: int = 1
-    camera_exposure: int = 60
+    camera_auto_exposure: float  = 0.25
+    camera_exposure: int = -10
     camera_gain: int = 1
     fiducial_size_m: float = 0.1675
     tag_layout: any = None
