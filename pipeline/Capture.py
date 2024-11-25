@@ -49,16 +49,16 @@ class DefaultCapture(Capture):
         if self._video == None:
             self._video = cv2.VideoCapture(int(config_store.remote_config.camera_id))
             self._video.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
-            self._video.set(cv2.CAP_PROP_FPS, 60)
+            self._video.set(cv2.CAP_PROP_FPS, config_store.remote_config.fps)
             self._video.set(cv2.CAP_PROP_FRAME_WIDTH, config_store.remote_config.camera_resolution_width)
             self._video.set(cv2.CAP_PROP_FRAME_HEIGHT, config_store.remote_config.camera_resolution_height)
             self._video.set(cv2.CAP_PROP_AUTO_EXPOSURE, 3)
             self._video.set(cv2.CAP_PROP_AUTO_EXPOSURE, config_store.remote_config.camera_auto_exposure)
             self._video.set(cv2.CAP_PROP_EXPOSURE, config_store.remote_config.camera_exposure)
             self._video.set(cv2.CAP_PROP_GAIN, config_store.remote_config.camera_gain)
-            self._video.set(cv2.CAP_PROP_BRIGHTNESS, 35)
-            self._video.set(cv2.CAP_PROP_CONTRAST, 60)
-            self._video.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+            self._video.set(cv2.CAP_PROP_BRIGHTNESS, config_store.remote_config.brightness)
+            self._video.set(cv2.CAP_PROP_CONTRAST, config_store.remote_config.contrast)
+            self._video.set(cv2.CAP_PROP_BUFFERSIZE, config_store.remote_config.buffersize)
 
         self._last_config = ConfigStore(dataclasses.replace(config_store.local_config),
                                         dataclasses.replace(config_store.remote_config))

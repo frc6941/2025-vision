@@ -68,6 +68,14 @@ class NTConfigSource(ConfigSource):
                 "camera_gain").subscribe(RemoteConfig.camera_gain)
             self._fiducial_size_m_sub = nt_table.getDoubleTopic(
                 "fiducial_size_m").subscribe(RemoteConfig.fiducial_size_m)
+            self._fiducial_size_m_sub = nt_table.getDoubleTopic(
+                "fps").subscribe(RemoteConfig.fps)
+            self._fiducial_size_m_sub = nt_table.getDoubleTopic(
+                "brightness").subscribe(RemoteConfig.brightness)
+            self._fiducial_size_m_sub = nt_table.getDoubleTopic(
+                "contrast").subscribe(RemoteConfig.contrast)
+            self._fiducial_size_m_sub = nt_table.getDoubleTopic(
+                "buffersize").subscribe(RemoteConfig.buffersize)
             self._tag_layout_sub = nt_table.getStringTopic(
                 "tag_layout").subscribe("")
             self._init_complete = True
