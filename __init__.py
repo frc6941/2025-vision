@@ -81,7 +81,7 @@ if __name__ == "__main__":
             if len(demo_image_observations) > 0:
                 demo_pose_observation = tag_pose_estimator.solve_fiducial_pose(demo_image_observations[0], config)
             output_publisher.send(config, timestamp, camera_pose_observation, demo_pose_observation, fps)
-
+            
         else:
             # No calibration
             print("No calibration found")

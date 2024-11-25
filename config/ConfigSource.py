@@ -43,7 +43,7 @@ class NTConfigSource(ConfigSource):
     _camera_id_sub: ntcore.StringSubscriber
     _camera_resolution_width_sub: ntcore.IntegerSubscriber
     _camera_resolution_height_sub: ntcore.IntegerSubscriber
-    _camera_auto_exposure_sub: ntcore.IntegerSubscriber
+    _camera_auto_exposure_sub: ntcore.DoubleSubscriber
     _camera_exposure_sub: ntcore.IntegerSubscriber
     _camera_gain_sub: ntcore.IntegerSubscriber
     _fiducial_size_m_sub: ntcore.DoubleSubscriber
@@ -60,7 +60,7 @@ class NTConfigSource(ConfigSource):
                 "camera_resolution_width").subscribe(RemoteConfig.camera_resolution_width)
             self._camera_resolution_height_sub = nt_table.getIntegerTopic(
                 "camera_resolution_height").subscribe(RemoteConfig.camera_resolution_height)
-            self._camera_auto_exposure_sub = nt_table.getIntegerTopic(
+            self._camera_auto_exposure_sub = nt_table.getDoubleTopic(
                 "camera_auto_exposure").subscribe(RemoteConfig.camera_auto_exposure)
             self._camera_exposure_sub = nt_table.getIntegerTopic(
                 "camera_exposure").subscribe(RemoteConfig.camera_exposure)
@@ -68,6 +68,14 @@ class NTConfigSource(ConfigSource):
                 "camera_gain").subscribe(RemoteConfig.camera_gain)
             self._fiducial_size_m_sub = nt_table.getDoubleTopic(
                 "fiducial_size_m").subscribe(RemoteConfig.fiducial_size_m)
+            self._fiducial_size_m_sub = nt_table.getDoubleTopic(
+                "fps").subscribe(RemoteConfig.fps)
+            self._fiducial_size_m_sub = nt_table.getDoubleTopic(
+                "brightness").subscribe(RemoteConfig.brightness)
+            self._fiducial_size_m_sub = nt_table.getDoubleTopic(
+                "contrast").subscribe(RemoteConfig.contrast)
+            self._fiducial_size_m_sub = nt_table.getDoubleTopic(
+                "buffersize").subscribe(RemoteConfig.buffersize)
             self._tag_layout_sub = nt_table.getStringTopic(
                 "tag_layout").subscribe("")
             self._init_complete = True
