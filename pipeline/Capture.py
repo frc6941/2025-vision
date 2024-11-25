@@ -5,6 +5,7 @@ from typing import Tuple
 
 import cv2
 import numpy
+
 from config.config import ConfigStore
 
 
@@ -45,10 +46,6 @@ class DefaultCapture(Capture):
             print("Restarting capture session")
             self._video.release()
             self._video = None
-        #if self._last_config != None:
-        #    print(self._last_config.remote_config.camera_exposure)
-        if config_store !=None:
-            print(config_store.remote_config.camera_exposure)
         if self._video == None:
             self._video = cv2.VideoCapture(int(config_store.remote_config.camera_id))
             self._video.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
@@ -62,9 +59,7 @@ class DefaultCapture(Capture):
             self._video.set(cv2.CAP_PROP_BRIGHTNESS, 35)
             self._video.set(cv2.CAP_PROP_CONTRAST, 60)
             self._video.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-            print(333)
 
-        #self._last_config = config_store
         self._last_config = ConfigStore(dataclasses.replace(config_store.local_config),
                                         dataclasses.replace(config_store.remote_config))
 
@@ -93,7 +88,7 @@ class GStreamerCapture(Capture):
                 print("No camera ID, waiting to start capture session")
             else:
                 print("Starting capture session")
-                #self._video = cv2.VideoCapture("v4l2src device=" + str(config_store.remote_config.camera_id) + " extra_controls=\"c,exposure_auto=" + str(config_store.remote_config.camera_auto_exposure) + ",exposure_absolute=" + str(
+                # self._video = cv2.VideoCapture("v4l2src device=" + str(config_store.remote_config.camera_id) + " extra_controls=\"c,exposure_auto=" + str(config_store.remote_config.camera_auto_exposure) + ",exposure_absolute=" + str(
                 #    config_store.remote_config.camera_exposure) + ",gain=" + str(config_store.remote_config.camera_gain) + ",sharpness=0,brightness=0\" ! image/jpeg,format=MJPG,width=" + str(config_store.remote_config.camera_resolution_width) + ",height=" + str(config_store.remote_config.camera_resolution_height) + " ! jpegdec ! video/x-raw ! appsink drop=1", cv2.CAP_GSTREAMER)
                 self._video = cv2.VideoCapture(int(config_store.remote_config.camera_id))
                 print("Capture session ready")
