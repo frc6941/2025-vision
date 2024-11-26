@@ -49,7 +49,7 @@ class NTConfigSource(ConfigSource):
     _fiducial_size_m_sub: ntcore.DoubleSubscriber
     _fps: ntcore.DoubleSubscriber
     _brightness: ntcore.DoubleSubscriber
-    _contract: ntcore.DoubleSubscriber
+    _contrast: ntcore.DoubleSubscriber
     _buffersize: ntcore.DoubleSubscriber
     _tag_layout_sub: ntcore.DoubleSubscriber
 
