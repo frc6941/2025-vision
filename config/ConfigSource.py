@@ -47,6 +47,10 @@ class NTConfigSource(ConfigSource):
     _camera_exposure_sub: ntcore.IntegerSubscriber
     _camera_gain_sub: ntcore.IntegerSubscriber
     _fiducial_size_m_sub: ntcore.DoubleSubscriber
+    _fps: ntcore.DoubleSubscriber
+    _brightness: ntcore.DoubleSubscriber
+    _contrast: ntcore.DoubleSubscriber
+    _buffersize: ntcore.DoubleSubscriber
     _tag_layout_sub: ntcore.DoubleSubscriber
 
     def update(self, config_store: ConfigStore) -> None:
@@ -68,13 +72,13 @@ class NTConfigSource(ConfigSource):
                 "camera_gain").subscribe(RemoteConfig.camera_gain)
             self._fiducial_size_m_sub = nt_table.getDoubleTopic(
                 "fiducial_size_m").subscribe(RemoteConfig.fiducial_size_m)
-            self._fiducial_size_m_sub = nt_table.getDoubleTopic(
+            self._fps = nt_table.getDoubleTopic(
                 "fps").subscribe(RemoteConfig.fps)
-            self._fiducial_size_m_sub = nt_table.getDoubleTopic(
+            self._brightness = nt_table.getDoubleTopic(
                 "brightness").subscribe(RemoteConfig.brightness)
-            self._fiducial_size_m_sub = nt_table.getDoubleTopic(
+            self._contrast = nt_table.getDoubleTopic(
                 "contrast").subscribe(RemoteConfig.contrast)
-            self._fiducial_size_m_sub = nt_table.getDoubleTopic(
+            self._buffersize = nt_table.getDoubleTopic(
                 "buffersize").subscribe(RemoteConfig.buffersize)
             self._tag_layout_sub = nt_table.getStringTopic(
                 "tag_layout").subscribe("")
@@ -88,6 +92,10 @@ class NTConfigSource(ConfigSource):
         config_store.remote_config.camera_exposure = self._camera_exposure_sub.get()
         config_store.remote_config.camera_gain = self._camera_gain_sub.get()
         config_store.remote_config.fiducial_size_m = self._fiducial_size_m_sub.get()
+        config_store.remote_config.fps = self._fps.get()
+        config_store.remote_config.brightness = self._brightness.get()
+        config_store.remote_config.contrast = self._contrast.get()
+        config_store.remote_config.buffersize = self._buffersize.get()
         try:
             config_store.remote_config.tag_layout = json.loads(self._tag_layout_sub.get())
         except:
