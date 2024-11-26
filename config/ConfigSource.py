@@ -93,7 +93,7 @@ class NTConfigSource(ConfigSource):
         config_store.remote_config.camera_gain = self._camera_gain_sub.get()
         config_store.remote_config.fiducial_size_m = self._fiducial_size_m_sub.get()
         config_store.remote_config.fps = self._fps.get()
-        config_store.remote_config.brightnes = self._brightness.get()
+        config_store.remote_config.brightness = self._brightness.get()
         config_store.remote_config.contrast = self._contrast.get()
         config_store.remote_config.buffersize = self._buffersize.get()
         try:
