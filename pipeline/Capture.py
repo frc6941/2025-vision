@@ -29,7 +29,16 @@ class Capture:
         remote_a = config_a.remote_config
         remote_b = config_b.remote_config
 
-        return remote_a.camera_id != remote_b.camera_id or remote_a.camera_resolution_width != remote_b.camera_resolution_width or remote_a.camera_resolution_height != remote_b.camera_resolution_height or remote_a.camera_auto_exposure != remote_b.camera_auto_exposure or remote_a.camera_exposure != remote_b.camera_exposure or remote_a.camera_gain != remote_b.camera_gain
+        return (remote_a.camera_id != remote_b.camera_id or
+                remote_a.camera_resolution_width != remote_b.camera_resolution_width or
+                remote_a.camera_resolution_height != remote_b.camera_resolution_height or
+                remote_a.camera_auto_exposure != remote_b.camera_auto_exposure or
+                remote_a.camera_exposure != remote_b.camera_exposure or
+                remote_a.camera_gain != remote_b.camera_gain or
+                remote_a.fps != remote_b.fps or
+                remote_a.brightness != remote_b.brightness or
+                remote_a.contrast != remote_b.contrast or
+                remote_a.buffersize != remote_b.buffersize)
 
 
 class DefaultCapture(Capture):
@@ -48,15 +57,21 @@ class DefaultCapture(Capture):
             self._video = None
 
         if self._video == None:
-            self._video = cv2.VideoCapture(int(config_store.remote_config.camera_id))
+            self._video = cv2.VideoCapture(int(config_store.remote_config.camera_id), cv2.CAP_V4L)
+            self._video.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
+            self._video.set(cv2.CAP_PROP_FPS, config_store.remote_config.fps)
             self._video.set(cv2.CAP_PROP_FRAME_WIDTH, config_store.remote_config.camera_resolution_width)
             self._video.set(cv2.CAP_PROP_FRAME_HEIGHT, config_store.remote_config.camera_resolution_height)
+            self._video.set(cv2.CAP_PROP_AUTO_EXPOSURE, 3)
             self._video.set(cv2.CAP_PROP_AUTO_EXPOSURE, config_store.remote_config.camera_auto_exposure)
             self._video.set(cv2.CAP_PROP_EXPOSURE, config_store.remote_config.camera_exposure)
             self._video.set(cv2.CAP_PROP_GAIN, config_store.remote_config.camera_gain)
-            self._video.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+            self._video.set(cv2.CAP_PROP_BRIGHTNESS, config_store.remote_config.brightness)
+            self._video.set(cv2.CAP_PROP_CONTRAST, config_store.remote_config.contrast)
+            self._video.set(cv2.CAP_PROP_BUFFERSIZE, config_store.remote_config.buffersize)
 
-        self._last_config = config_store
+        self._last_config = ConfigStore(dataclasses.replace(config_store.local_config),
+                                        dataclasses.replace(config_store.remote_config))
 
         retval, image = self._video.read()
         return retval, image
