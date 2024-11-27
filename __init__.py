@@ -6,8 +6,10 @@ from typing import Union
 
 import ntcore
 
-from calibration.CalibrationCommandSource import (CalibrationCommandSource,
-                                                  NTCalibrationCommandSource)
+from calibration.CalibrationCommandSource import (
+    CalibrationCommandSource,
+    NTCalibrationCommandSource,
+)
 from calibration.CalibrationSession import CalibrationSession
 from config.ConfigSource import ConfigSource, FileConfigSource, NTConfigSource
 from config.config import LocalConfig, RemoteConfig
@@ -24,12 +26,21 @@ from vision_types import FiducialPoseObservation
 DEMO_ID = 29
 
 
-def imgProcessor(qImage: multiprocessing.Queue, qTime: multiprocessing.Queue, qConfig: multiprocessing.Queue,
-                 qResult: multiprocessing.Queue, qObservationResult: multiprocessing.Queue, fps_count):
+def imgProcessor(
+    qImage: multiprocessing.Queue,
+    qTime: multiprocessing.Queue,
+    qConfig: multiprocessing.Queue,
+    qResult: multiprocessing.Queue,
+    qObservationResult: multiprocessing.Queue,
+    fps_count,
+):
+    DEMO_ID = 29
     fiducial_detector = ArucoFiducialDetector(cv2.aruco.DICT_APRILTAG_36h11)
     # estimator
     camera_pose_estimator = MultiTargetCameraPoseEstimator()
     tag_pose_estimator = SquareTargetPoseEstimator()
+    # publish output
+    output_publisher: OutputPublisher = NTOutputPublisher()
     while True:
         if not qImage.empty():
             image = qImage.get()
@@ -38,12 +49,17 @@ def imgProcessor(qImage: multiprocessing.Queue, qTime: multiprocessing.Queue, qC
             image_observations = fiducial_detector.detect_fiducials(image, pConfig)
             [overlay_image_observation(image, x) for x in image_observations]
             camera_pose_observation = camera_pose_estimator.solve_camera_pose(
-                [x for x in image_observations if x.tag_id != DEMO_ID], pConfig)
-            demo_image_observations = [x for x in image_observations if x.tag_id == DEMO_ID]
+                [x for x in image_observations if x.tag_id != DEMO_ID], pConfig
+            )
+            demo_image_observations = [
+                x for x in image_observations if x.tag_id == DEMO_ID
+            ]
             demo_pose_observation: Union[FiducialPoseObservation, None] = None
             if len(demo_image_observations) > 0:
-                demo_pose_observation = tag_pose_estimator.solve_fiducial_pose(demo_image_observations[0], pConfig)
-            print(22)
+                demo_pose_observation = tag_pose_estimator.solve_fiducial_pose(
+                    demo_image_observations[0], pConfig
+                )
+            # print(camera_pose_observation.pose_0)
             # a = DetectResult(config=pConfig, time=pTime, observation=camera_pose_observation,
             #                  demo_observation=demo_pose_observation,
             #                  fps_count=fps_count.value)
@@ -54,11 +70,19 @@ def imgProcessor(qImage: multiprocessing.Queue, qTime: multiprocessing.Queue, qC
             # a.demo_observation = demo_pose_observation
             # a.time = pTime
             # print(fps_count.value, pConfig, camera_pose_observation, demo_pose_observation, pTime)
-            a = DetectResult(fps_count=fps_count.value, config=pConfig, observation=camera_pose_observation,
-                             demo_observation=demo_pose_observation, time=pTime)
-            qObservationResult.put(a)
+            output_publisher.send(
+                config_store=pConfig,
+                timestamp=pTime,
+                observation=camera_pose_observation,
+                demo_observation=demo_pose_observation,
+                fps=fps_count.value,
+            )
+            # if camera_pose_observation != None:
+            #     print(camera_pose_observation)
             qResult.put(image)
         # print(33)
+    print(1)
+    return
 
 
 def streaming(qResult: multiprocessing.Queue, fps_count):
@@ -88,7 +112,8 @@ if __name__ == "__main__":
 
     # multiprocessing to speed up
     manager = multiprocessing.Manager()
-    pool = multiprocessing.Pool(processes=cpu_count() - 2)
+    # pool = multiprocessing.Pool(processes=cpu_count() - 2)
+    pool = multiprocessing.Pool(processes=1)
     pool2 = multiprocessing.Pool(processes=1)
 
     # variables sharing between processes
@@ -97,12 +122,21 @@ if __name__ == "__main__":
     queue_config = manager.Queue()
     queue_result = manager.Queue()
     queue_observation_result = manager.Queue()
-    fps_count = manager.Value('i', 0)
+    fps_count = manager.Value("i", 0)
 
     # create cpu_count() process
-    for i in range(cpu_count() - 2):
-        pool.apply_async(func=imgProcessor, args=(
-            queue_image, queue_time, queue_config, queue_result, queue_observation_result, fps_count))
+    for i in range(1):
+        pool.apply_async(
+            func=imgProcessor,
+            args=(
+                queue_image,
+                queue_time,
+                queue_config,
+                queue_result,
+                queue_observation_result,
+                fps_count,
+            ),
+        )
     pool2.apply_async(func=streaming, args=(queue_result, fps_count))
 
     config = ConfigStore(LocalConfig(), RemoteConfig())
@@ -125,6 +159,8 @@ if __name__ == "__main__":
     # publish output
     output_publisher: OutputPublisher = NTOutputPublisher()
 
+    debug_cnt = 0
+
     while True:
         # update config
         remote_config_source.update(config)
@@ -133,7 +169,12 @@ if __name__ == "__main__":
         if time.time() - last_print > 1:
             last_print = time.time()
             print("Running at", fps_count.value, "fps")
+            if fps_count.value == 0:
+                debug_cnt += 1
             fps_count.value = 0
+
+        if debug_cnt > 4:
+            pass
 
         # get image
         success, image = capture.get_frame(config)
@@ -149,13 +190,18 @@ if __name__ == "__main__":
             queue_config.put(config)
 
         # publish result
-        if not queue_observation_result.empty():
-            print(44)
-            observation_result: DetectResult = queue_observation_result.get()
-            output_publisher.send(config_store=observation_result.config, timestamp=observation_result.time,
-                                  observation=observation_result.observation,
-                                  demo_observation=observation_result.demo_observation,
-                                  fps=observation_result.fps_count)
+        # if not queue_observation_result.empty():
+        #     print(44)
+        #     observation_result: DetectResult = queue_observation_result.get()
+        #     output_publisher.send(
+        #         config_store=observation_result.config,
+        #         timestamp=observation_result.time,
+        #         observation=observation_result.observation,
+        #         demo_observation=observation_result.demo_observation,
+        #         fps=observation_result.fps_count,
+        #     )
+        # else:
+        #     pass
 
         # Start calibration
         if calibration_command_source.get_calibrating(config):
@@ -164,7 +210,9 @@ if __name__ == "__main__":
                 pool.terminate()
                 calibrating = True
             # calib
-            calibration_session.process_frame(image, calibration_command_source.get_capture_flag(config))
+            calibration_session.process_frame(
+                image, calibration_command_source.get_capture_flag(config)
+            )
 
         elif calibrating:
             # Finish calibration
@@ -174,3 +222,5 @@ if __name__ == "__main__":
         if not config.local_config.has_calibration:
             print("No calibration found")
             time.sleep(0.5)
+
+        # print(multiprocessing.active_children())
