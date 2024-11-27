@@ -13,7 +13,6 @@ from calibration.CalibrationCommandSource import (
 from calibration.CalibrationSession import CalibrationSession
 from config.ConfigSource import ConfigSource, FileConfigSource, NTConfigSource
 from config.config import LocalConfig, RemoteConfig
-from output.DetectResult import DetectResult
 from output.OutputPublisher import NTOutputPublisher, OutputPublisher
 from output.StreamServer import MjpegServer
 from output.overlay_util import *
@@ -31,7 +30,6 @@ def imgProcessor(
     qTime: multiprocessing.Queue,
     qConfig: multiprocessing.Queue,
     qResult: multiprocessing.Queue,
-    qObservationResult: multiprocessing.Queue,
     fps_count,
 ):
     DEMO_ID = 29
@@ -59,17 +57,6 @@ def imgProcessor(
                 demo_pose_observation = tag_pose_estimator.solve_fiducial_pose(
                     demo_image_observations[0], pConfig
                 )
-            # print(camera_pose_observation.pose_0)
-            # a = DetectResult(config=pConfig, time=pTime, observation=camera_pose_observation,
-            #                  demo_observation=demo_pose_observation,
-            #                  fps_count=fps_count.value)
-            # a = DetectResult()
-            # a.fps_count = fps_count.value
-            # a.config = pConfig
-            # a.observation = camera_pose_observation
-            # a.demo_observation = demo_pose_observation
-            # a.time = pTime
-            # print(fps_count.value, pConfig, camera_pose_observation, demo_pose_observation, pTime)
             output_publisher.send(
                 config_store=pConfig,
                 timestamp=pTime,
@@ -77,12 +64,7 @@ def imgProcessor(
                 demo_observation=demo_pose_observation,
                 fps=fps_count.value,
             )
-            # if camera_pose_observation != None:
-            #     print(camera_pose_observation)
             qResult.put(image)
-        # print(33)
-    print(1)
-    return
 
 
 def streaming(qResult: multiprocessing.Queue, fps_count):
@@ -103,8 +85,6 @@ def streaming(qResult: multiprocessing.Queue, fps_count):
             else:
                 qResult.get()
             fps_count.value += 1
-        # else:
-        #     print(111)
 
 
 if __name__ == "__main__":
@@ -112,8 +92,7 @@ if __name__ == "__main__":
 
     # multiprocessing to speed up
     manager = multiprocessing.Manager()
-    # pool = multiprocessing.Pool(processes=cpu_count() - 2)
-    pool = multiprocessing.Pool(processes=1)
+    pool = multiprocessing.Pool(processes=cpu_count() - 2)
     pool2 = multiprocessing.Pool(processes=1)
 
     # variables sharing between processes
@@ -121,11 +100,10 @@ if __name__ == "__main__":
     queue_time = manager.Queue()
     queue_config = manager.Queue()
     queue_result = manager.Queue()
-    queue_observation_result = manager.Queue()
     fps_count = manager.Value("i", 0)
 
     # create cpu_count() process
-    for i in range(1):
+    for i in range(cpu_count() - 2):
         pool.apply_async(
             func=imgProcessor,
             args=(
@@ -133,7 +111,6 @@ if __name__ == "__main__":
                 queue_time,
                 queue_config,
                 queue_result,
-                queue_observation_result,
                 fps_count,
             ),
         )
@@ -159,8 +136,6 @@ if __name__ == "__main__":
     # publish output
     output_publisher: OutputPublisher = NTOutputPublisher()
 
-    debug_cnt = 0
-
     while True:
         # update config
         remote_config_source.update(config)
@@ -169,12 +144,7 @@ if __name__ == "__main__":
         if time.time() - last_print > 1:
             last_print = time.time()
             print("Running at", fps_count.value, "fps")
-            if fps_count.value == 0:
-                debug_cnt += 1
             fps_count.value = 0
-
-        if debug_cnt > 4:
-            pass
 
         # get image
         success, image = capture.get_frame(config)
@@ -188,20 +158,6 @@ if __name__ == "__main__":
             queue_image.put(image)
             queue_time.put(time.time())
             queue_config.put(config)
-
-        # publish result
-        # if not queue_observation_result.empty():
-        #     print(44)
-        #     observation_result: DetectResult = queue_observation_result.get()
-        #     output_publisher.send(
-        #         config_store=observation_result.config,
-        #         timestamp=observation_result.time,
-        #         observation=observation_result.observation,
-        #         demo_observation=observation_result.demo_observation,
-        #         fps=observation_result.fps_count,
-        #     )
-        # else:
-        #     pass
 
         # Start calibration
         if calibration_command_source.get_calibrating(config):

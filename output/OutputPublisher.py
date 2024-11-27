@@ -58,11 +58,9 @@ class NTOutputPublisher(OutputPublisher):
         observation_data: List[float] = [0]
         demo_observation_data: List[float] = []
         if observation != None:
-            print(observation)
             observation_data[0] = 1
             observation_data.append(observation.error_0)
             observation_data.append(observation.pose_0.translation().X())
-            print(observation.pose_0.translation().X())
             observation_data.append(observation.pose_0.translation().Y())
             observation_data.append(observation.pose_0.translation().Z())
             observation_data.append(observation.pose_0.rotation().getQuaternion().W())
