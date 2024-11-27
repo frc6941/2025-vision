@@ -9,7 +9,7 @@ class LocalConfig:
     device_id: str = "northstar_0"
     server_ip: str = "10.96.20.2"
     stream_port: int = 8000
-    has_calibration: bool = True  # TODO: calib
+    has_calibration: bool = True
     camera_matrix: numpy.typing.NDArray[numpy.float64] = numpy.array([])
     distortion_coefficients: numpy.typing.NDArray[numpy.float64] = numpy.array([])
 
