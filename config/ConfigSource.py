@@ -64,7 +64,7 @@ class NTConfigSource(ConfigSource):
                 "camera_resolution_width").subscribe(RemoteConfig.camera_resolution_width)
             self._camera_resolution_height_sub = nt_table.getIntegerTopic(
                 "camera_resolution_height").subscribe(RemoteConfig.camera_resolution_height)
-            self._camera_auto_exposure_sub = nt_table.getIntegerTopic(
+            self._camera_auto_exposure_sub = nt_table.getDoubleTopic(
                 "camera_auto_exposure").subscribe(RemoteConfig.camera_auto_exposure)
             self._camera_exposure_sub = nt_table.getIntegerTopic(
                 "camera_exposure").subscribe(RemoteConfig.camera_exposure)
