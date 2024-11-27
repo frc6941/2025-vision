@@ -29,8 +29,6 @@ class Capture:
         remote_a = config_a.remote_config
         remote_b = config_b.remote_config
 
-        print(config_a.remote_config.brightness)
-
         return (remote_a.camera_id != remote_b.camera_id or
                 remote_a.camera_resolution_width != remote_b.camera_resolution_width or
                 remote_a.camera_resolution_height != remote_b.camera_resolution_height or
