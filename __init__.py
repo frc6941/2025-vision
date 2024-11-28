@@ -151,7 +151,7 @@ if __name__ == "__main__":
             success, image = capture.get_frame(config)
 
         # publish image with timestamp & config if processes aren't working
-        if queue_image.empty():
+        while queue_image.empty() and time.time() - last_print < 1:
             queue_image.put(image)
             queue_time.put(time.time())
             queue_config.put(config)
