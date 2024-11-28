@@ -9,12 +9,12 @@ from vision_types import CameraPoseObservation, FiducialPoseObservation
 
 class OutputPublisher:
     def send(
-        self,
-        config_store: ConfigStore,
-        timestamp: float,
-        observation: Union[CameraPoseObservation, None],
-        demo_observation: Union[FiducialPoseObservation, None],
-        fps: Union[int, None] = None,
+            self,
+            config_store: ConfigStore,
+            timestamp: float,
+            observation: Union[CameraPoseObservation, None],
+            demo_observation: Union[FiducialPoseObservation, None],
+            fps: Union[int, None] = None,
     ) -> None:
         raise NotImplementedError
 
@@ -24,18 +24,20 @@ class NTOutputPublisher(OutputPublisher):
     _observations_pub: ntcore.DoubleArrayPublisher
     _observations_pub: ntcore.DoubleArrayPublisher
     _fps_pub: ntcore.IntegerPublisher
+    instance: OutputPublisher = None
 
     def send(
-        self,
-        config_store: ConfigStore,
-        timestamp: float,
-        observation: Union[CameraPoseObservation, None],
-        demo_observation: Union[FiducialPoseObservation, None],
-        fps: Union[int, None] = None,
+            self,
+            config_store: ConfigStore,
+            timestamp: float,
+            observation: Union[CameraPoseObservation, None],
+            demo_observation: Union[FiducialPoseObservation, None],
+            fps: Union[int, None] = None,
     ) -> None:
         # Initialize publishers on first call
         if not self._init_complete:
-            print(1111)
+            ntcore.NetworkTableInstance.getDefault().setServer(config_store.local_config.server_ip)
+            ntcore.NetworkTableInstance.getDefault().startClient4(config_store.local_config.device_id)
             self._init_complete = True
             nt_table = ntcore.NetworkTableInstance.getDefault().getTable(
                 "/" + config_store.local_config.device_id + "/output"

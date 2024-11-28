@@ -26,11 +26,11 @@ DEMO_ID = 29
 
 
 def imgProcessor(
-    qImage: multiprocessing.Queue,
-    qTime: multiprocessing.Queue,
-    qConfig: multiprocessing.Queue,
-    qResult: multiprocessing.Queue,
-    fps_count,
+        qImage: multiprocessing.Queue,
+        qTime: multiprocessing.Queue,
+        qConfig: multiprocessing.Queue,
+        qResult: multiprocessing.Queue,
+        fps_count,
 ):
     DEMO_ID = 29
     fiducial_detector = ArucoFiducialDetector(cv2.aruco.DICT_APRILTAG_36h11)
@@ -133,9 +133,6 @@ if __name__ == "__main__":
     # fps_counting
     last_print = 0
 
-    # publish output
-    output_publisher: OutputPublisher = NTOutputPublisher()
-
     while True:
         # update config
         remote_config_source.update(config)
@@ -178,5 +175,3 @@ if __name__ == "__main__":
         if not config.local_config.has_calibration:
             print("No calibration found")
             time.sleep(0.5)
-
-        # print(multiprocessing.active_children())
