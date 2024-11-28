@@ -2,19 +2,17 @@ import sys
 import time
 from typing import Union
 
-import cv2
 import ntcore
 
 from calibration.CalibrationCommandSource import (CalibrationCommandSource,
                                                   NTCalibrationCommandSource)
 from calibration.CalibrationSession import CalibrationSession
-from config.config import ConfigStore, LocalConfig, RemoteConfig
 from config.ConfigSource import ConfigSource, FileConfigSource, NTConfigSource
+from config.config import LocalConfig, RemoteConfig
 from output.OutputPublisher import NTOutputPublisher, OutputPublisher
-from output.overlay_util import *
 from output.StreamServer import MjpegServer
+from output.overlay_util import *
 from pipeline.CameraPoseEstimator import MultiTargetCameraPoseEstimator
-from pipeline.Capture import GStreamerCapture
 from pipeline.Capture import DefaultCapture
 from pipeline.FiducialDetector import ArucoFiducialDetector
 from pipeline.PoseEstimator import SquareTargetPoseEstimator
@@ -48,6 +46,7 @@ if __name__ == "__main__":
         remote_config_source.update(config)
         timestamp = time.time()
         success, image = capture.get_frame(config)
+        print("get img" + str(time.time() - timestamp))
         if not success:
             time.sleep(0.5)
             continue
@@ -72,7 +71,10 @@ if __name__ == "__main__":
 
         elif config.local_config.has_calibration:
             # Normal mode
+            time_start = time.time()
             image_observations = fiducial_detector.detect_fiducials(image, config)
+            print("solve pnp" + str(time.time() - time_start))
+            time_start = time.time()
             [overlay_image_observation(image, x) for x in image_observations]
             camera_pose_observation = camera_pose_estimator.solve_camera_pose(
                 [x for x in image_observations if x.tag_id != DEMO_ID], config)
@@ -80,12 +82,15 @@ if __name__ == "__main__":
             demo_pose_observation: Union[FiducialPoseObservation, None] = None
             if len(demo_image_observations) > 0:
                 demo_pose_observation = tag_pose_estimator.solve_fiducial_pose(demo_image_observations[0], config)
+            print("calculate observation" + str(time.time() - time_start))
+            time_start = time.time()
             output_publisher.send(config, timestamp, camera_pose_observation, demo_pose_observation, fps)
-            
+            print("NT4" + str(time.time() - time_start))
+
         else:
             # No calibration
             print("No calibration found")
             time.sleep(0.5)
 
-        #image = cv2.undistort(image, config.local_config.camera_matrix, config.local_config.distortion_coefficients)
+        # image = cv2.undistort(image, config.local_config.camera_matrix, config.local_config.distortion_coefficients)
         stream_server.set_frame(image)
