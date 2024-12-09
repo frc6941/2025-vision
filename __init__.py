@@ -163,37 +163,6 @@ def send(
     qDetection.put(DetectResult(fps, observation_data, demo_observation_data, math.floor(timestamp * 1000000)))
 
 
-def publishNt(qDetection: multiprocessing.Queue):
-    _demo_observations_pub: ntcore.DoubleArrayPublisher
-    _observations_pub: ntcore.DoubleArrayPublisher
-    _fps_pub: ntcore.IntegerPublisher
-    config = ConfigStore(LocalConfig(), RemoteConfig())
-    ntcore.NetworkTableInstance.getDefault().setServer(config.local_config.server_ip)
-    ntcore.NetworkTableInstance.getDefault().startClient4(config.local_config.device_id)
-    nt_table = ntcore.NetworkTableInstance.getDefault().getTable(
-        "/" + config.local_config.device_id + "/output"
-    )
-    _observations_pub = nt_table.getDoubleArrayTopic(
-        "observations"
-    ).publish(
-        ntcore.PubSubOptions(periodic=0, sendAll=True, keepDuplicates=True)
-    )
-    _demo_observations_pub = nt_table.getDoubleArrayTopic(
-        "demo_observations"
-    ).publish(
-        ntcore.PubSubOptions(periodic=0, sendAll=True, keepDuplicates=True)
-    )
-    _fps_pub = nt_table.getIntegerTopic("fps").publish()
-    while True:
-        if not qDetection.empty():
-            a: DetectResult = qDetection.get()
-            _fps_pub.set(a.fps)
-            _observations_pub.set(a.observation, a.time)
-            _demo_observations_pub.set(
-                a.demo_observation, a.time)
-            ntcore.NetworkTableInstance.getDefault().flush()
-
-
 def imgPublisher(qImage: multiprocessing.Queue, qTime: multiprocessing.Queue, qConfig: multiprocessing.Queue):
     capture = DefaultCapture()
     config = ConfigStore(LocalConfig(), RemoteConfig())
@@ -221,10 +190,9 @@ if __name__ == "__main__":
 
     # multiprocessing to speed up
     manager = multiprocessing.Manager()
-    pool = multiprocessing.Pool(processes=cpu_count() - 4)
+    pool = multiprocessing.Pool(processes=cpu_count() - 3)
     pool2 = multiprocessing.Pool(processes=1)
     pool3 = multiprocessing.Pool(processes=1)
-    pool4 = multiprocessing.Pool(processes=1)
 
     # variables sharing between processes
     queue_image = manager.Queue()
@@ -235,7 +203,7 @@ if __name__ == "__main__":
     fps_count = manager.Value("i", 0)
 
     # create cpu_count() process
-    for i in range(cpu_count() - 4):  # TODO: change range when commit
+    for i in range(cpu_count() - 3):  # TODO: change range when commit
         pool.apply_async(
             func=imgProcessor,
             args=(
@@ -248,8 +216,7 @@ if __name__ == "__main__":
             ),
         )
     pool2.apply_async(func=streaming, args=(queue_result, fps_count))
-    pool3.apply_async(func=publishNt, args=(queue_detection,))
-    pool4.apply_async(func=imgPublisher, args=(queue_image, queue_time, queue_config))
+    pool3.apply_async(func=imgPublisher, args=(queue_image, queue_time, queue_config))
 
     config = ConfigStore(LocalConfig(), RemoteConfig())
     local_config_source: ConfigSource = FileConfigSource()
@@ -268,6 +235,28 @@ if __name__ == "__main__":
     # fps_counting
     last_print = 0
 
+    # NT
+    _demo_observations_pub: ntcore.DoubleArrayPublisher
+    _observations_pub: ntcore.DoubleArrayPublisher
+    _fps_pub: ntcore.IntegerPublisher
+    config = ConfigStore(LocalConfig(), RemoteConfig())
+    ntcore.NetworkTableInstance.getDefault().setServer(config.local_config.server_ip)
+    ntcore.NetworkTableInstance.getDefault().startClient4(config.local_config.device_id)
+    nt_table = ntcore.NetworkTableInstance.getDefault().getTable(
+        "/" + config.local_config.device_id + "/output"
+    )
+    _observations_pub = nt_table.getDoubleArrayTopic(
+        "observations"
+    ).publish(
+        ntcore.PubSubOptions(periodic=0, sendAll=True, keepDuplicates=True)
+    )
+    _demo_observations_pub = nt_table.getDoubleArrayTopic(
+        "demo_observations"
+    ).publish(
+        ntcore.PubSubOptions(periodic=0, sendAll=True, keepDuplicates=True)
+    )
+    _fps_pub = nt_table.getIntegerTopic("fps").publish()
+
     while True:
         # update config
         remote_config_source.update(config)
@@ -278,21 +267,13 @@ if __name__ == "__main__":
             print("Running at", fps_count.value, "fps")
             fps_count.value = 0
 
-        # if not queue_detection.empty():
-        #     print(queue_detection.get().time)
-
-        # # get image
-        # success, image = capture.get_frame(config)
-        # while not success:
-        #     print("Failed to get image")
-        #     time.sleep(0.5)
-        #     success, image = capture.get_frame(config)
-        #
-        # # publish image with timestamp & config if processes aren't working
-        # while queue_image.empty() and time.time() - last_print < 1:
-        #     queue_image.put(image)
-        #     queue_time.put(time.time())
-        #     queue_config.put(config)
+        if not queue_detection.empty():
+            a: DetectResult = queue_detection.get()
+            _fps_pub.set(a.fps)
+            _observations_pub.set(a.observation, a.time)
+            _demo_observations_pub.set(
+                a.demo_observation, a.time)
+            ntcore.NetworkTableInstance.getDefault().flush()
 
         # Start calibration
         if calibration_command_source.get_calibrating(config):
