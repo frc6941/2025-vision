@@ -194,14 +194,37 @@ def publishNt(qDetection: multiprocessing.Queue):
             ntcore.NetworkTableInstance.getDefault().flush()
 
 
-if __name__ == "__main__":
+def imgPublisher(qImage: multiprocessing.Queue, qTime: multiprocessing.Queue, qConfig: multiprocessing.Queue):
     capture = DefaultCapture()
+    config = ConfigStore(LocalConfig(), RemoteConfig())
+    remote_config_source: ConfigSource = NTConfigSource()
+    while True:
+        # update config
+        remote_config_source.update(config)
+
+        # get image
+        success, image = capture.get_frame(config)
+        while not success:
+            print("Failed to get image")
+            time.sleep(0.5)
+
+        # publish image with timestamp & config if processes aren't working
+        if qImage.empty():
+            qImage.put(image)
+            qTime.put(time.time())
+            qConfig.put(config)
+            # cv2.imshow("a", image)
+            # cv2.waitKey(1)
+
+
+if __name__ == "__main__":
 
     # multiprocessing to speed up
     manager = multiprocessing.Manager()
-    pool = multiprocessing.Pool(processes=cpu_count() - 3)
+    pool = multiprocessing.Pool(processes=cpu_count() - 4)
     pool2 = multiprocessing.Pool(processes=1)
     pool3 = multiprocessing.Pool(processes=1)
+    pool4 = multiprocessing.Pool(processes=1)
 
     # variables sharing between processes
     queue_image = manager.Queue()
@@ -212,7 +235,7 @@ if __name__ == "__main__":
     fps_count = manager.Value("i", 0)
 
     # create cpu_count() process
-    for i in range(2):
+    for i in range(cpu_count() - 4):  # TODO: change range when commit
         pool.apply_async(
             func=imgProcessor,
             args=(
@@ -226,6 +249,7 @@ if __name__ == "__main__":
         )
     pool2.apply_async(func=streaming, args=(queue_result, fps_count))
     pool3.apply_async(func=publishNt, args=(queue_detection,))
+    pool4.apply_async(func=imgPublisher, args=(queue_image, queue_time, queue_config))
 
     config = ConfigStore(LocalConfig(), RemoteConfig())
     local_config_source: ConfigSource = FileConfigSource()
@@ -253,22 +277,22 @@ if __name__ == "__main__":
             last_print = time.time()
             print("Running at", fps_count.value, "fps")
             fps_count.value = 0
-        #
+
         # if not queue_detection.empty():
         #     print(queue_detection.get().time)
 
-        # get image
-        success, image = capture.get_frame(config)
-        while not success:
-            print("Failed to get image")
-            time.sleep(0.5)
-            success, image = capture.get_frame(config)
-
-        # publish image with timestamp & config if processes aren't working
-        while queue_image.empty() and time.time() - last_print < 1:
-            queue_image.put(image)
-            queue_time.put(time.time())
-            queue_config.put(config)
+        # # get image
+        # success, image = capture.get_frame(config)
+        # while not success:
+        #     print("Failed to get image")
+        #     time.sleep(0.5)
+        #     success, image = capture.get_frame(config)
+        #
+        # # publish image with timestamp & config if processes aren't working
+        # while queue_image.empty() and time.time() - last_print < 1:
+        #     queue_image.put(image)
+        #     queue_time.put(time.time())
+        #     queue_config.put(config)
 
         # Start calibration
         if calibration_command_source.get_calibrating(config):
@@ -278,7 +302,7 @@ if __name__ == "__main__":
                 calibrating = True
             # calib
             calibration_session.process_frame(
-                image, calibration_command_source.get_capture_flag(config)
+                queue_detection.get(), calibration_command_source.get_capture_flag(config)
             )
 
         elif calibrating:
