@@ -18,7 +18,7 @@ from output.DetectResult import DetectResult
 from output.StreamServer import MjpegServer
 from output.overlay_util import *
 from pipeline.CameraPoseEstimator import MultiTargetCameraPoseEstimator
-from pipeline.Capture import DefaultCapture
+from pipeline.Capture import DefaultCapture, GStreamerCapture
 from pipeline.FiducialDetector import ArucoFiducialDetector
 from pipeline.PoseEstimator import SquareTargetPoseEstimator
 from vision_types import FiducialPoseObservation, CameraPoseObservation
@@ -164,7 +164,8 @@ def send(
 
 
 def imgPublisher(qImage: multiprocessing.Queue, qTime: multiprocessing.Queue, qConfig: multiprocessing.Queue):
-    capture = DefaultCapture()
+    #capture = DefaultCapture()
+    capture = GStreamerCapture()
     config = ConfigStore(LocalConfig(), RemoteConfig())
     remote_config_source: ConfigSource = NTConfigSource()
     while True:
@@ -215,8 +216,8 @@ if __name__ == "__main__":
                 fps_count,
             ),
         )
-    pool2.apply_async(func=streaming, args=(queue_result, fps_count))
-    pool3.apply_async(func=imgPublisher, args=(queue_image, queue_time, queue_config))
+    pool2.apply_async(func=streaming, args=(queue_result, fps_count,),)
+    pool3.apply_async(func=imgPublisher, args=(queue_image, queue_time, queue_config,),)
 
     config = ConfigStore(LocalConfig(), RemoteConfig())
     local_config_source: ConfigSource = FileConfigSource()
