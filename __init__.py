@@ -18,18 +18,18 @@ from output.DetectResult import DetectResult
 from output.StreamServer import MjpegServer
 from output.overlay_util import *
 from pipeline.CameraPoseEstimator import MultiTargetCameraPoseEstimator
-from pipeline.Capture import DefaultCapture, GStreamerCapture
+from pipeline.Capture import GStreamerCapture
 from pipeline.FiducialDetector import ArucoFiducialDetector
 from pipeline.PoseEstimator import SquareTargetPoseEstimator
 from vision_types import FiducialPoseObservation, CameraPoseObservation
 
 
 def imgProcessor(
-        qImage: multiprocessing.Queue,
-        qTime: multiprocessing.Queue,
-        qConfig: multiprocessing.Queue,
-        qResult: multiprocessing.Queue,
-        qDetection: multiprocessing.Queue,
+        qImage,
+        qTime,
+        qConfig,
+        qResult,
+        qDetection,
         fps_count,
 ):
     DEMO_ID = 29
@@ -65,7 +65,7 @@ def imgProcessor(
             qResult.put(image)
 
 
-def streaming(qResult: multiprocessing.Queue, fps_count):
+def streaming(qResult, fps_count):
     config = ConfigStore(LocalConfig(), RemoteConfig())
     # start stream server
     stream_server = MjpegServer()
@@ -86,7 +86,7 @@ def streaming(qResult: multiprocessing.Queue, fps_count):
 
 
 def send(
-        qDetection: multiprocessing.Queue,
+        qDetection,
         timestamp: float,
         observation: Union[CameraPoseObservation, None],
         demo_observation: Union[FiducialPoseObservation, None],
@@ -163,12 +163,13 @@ def send(
     qDetection.put(DetectResult(fps, observation_data, demo_observation_data, math.floor(timestamp * 1000000)))
 
 
-def imgPublisher(qImage: multiprocessing.Queue, qTime: multiprocessing.Queue, qConfig: multiprocessing.Queue):
-    #capture = DefaultCapture()
+def imgPublisher(qImage, qTime, qConfig):
+    # capture = DefaultCapture()
     capture = GStreamerCapture()
     config = ConfigStore(LocalConfig(), RemoteConfig())
     remote_config_source: ConfigSource = NTConfigSource()
     while True:
+        time_start = time.time()
         # update config
         remote_config_source.update(config)
 
@@ -180,11 +181,14 @@ def imgPublisher(qImage: multiprocessing.Queue, qTime: multiprocessing.Queue, qC
 
         # publish image with timestamp & config if processes aren't working
         if qImage.empty():
+            time1 = time.time()
             qImage.put(image)
+            print("Queue " + str(time.time() - time1))
             qTime.put(time.time())
             qConfig.put(config)
             # cv2.imshow("a", image)
             # cv2.waitKey(1)
+            print("Get Image: " + str(time.time() - time_start))
 
 
 if __name__ == "__main__":
@@ -216,8 +220,8 @@ if __name__ == "__main__":
                 fps_count,
             ),
         )
-    pool2.apply_async(func=streaming, args=(queue_result, fps_count,),)
-    pool3.apply_async(func=imgPublisher, args=(queue_image, queue_time, queue_config,),)
+    pool2.apply_async(func=streaming, args=(queue_result, fps_count,), )
+    pool3.apply_async(func=imgPublisher, args=(queue_image, queue_time, queue_config,), )
 
     config = ConfigStore(LocalConfig(), RemoteConfig())
     local_config_source: ConfigSource = FileConfigSource()
