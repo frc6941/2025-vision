@@ -181,6 +181,7 @@ def imgPublisher(qImage, qTime, qConfig):
 
         # publish image with timestamp & config if processes aren't working
         if qImage.empty():
+            print("Image Before Queue "+str(time.time()-time_start))
             time1 = time.time()
             qImage.put(image)
             print("Queue " + str(time.time() - time1))
@@ -188,7 +189,7 @@ def imgPublisher(qImage, qTime, qConfig):
             qConfig.put(config)
             # cv2.imshow("a", image)
             # cv2.waitKey(1)
-            print("Get Image: " + str(time.time() - time_start))
+            print("Get Image: " + str(time.time() - time_start)+"\n")
 
 
 if __name__ == "__main__":
