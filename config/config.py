@@ -17,7 +17,7 @@ class LocalConfig:
 @dataclass
 class RemoteConfig:
     # camera_id: str = "/dev/v4l/by-path/platform-fc880000.usb-usb-0:1:1.0-video-index0"
-    camera_id: str = "/dev/video2"
+    camera_id: str = "/dev/video_cam1"
     camera_resolution_width: int = 1280
     camera_resolution_height: int = 720
     camera_auto_exposure: float = 0.25
