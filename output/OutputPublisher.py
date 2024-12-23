@@ -24,7 +24,6 @@ class NTOutputPublisher(OutputPublisher):
     _observations_pub: ntcore.DoubleArrayPublisher
     _observations_pub: ntcore.DoubleArrayPublisher
     _fps_pub: ntcore.IntegerPublisher
-    instance: OutputPublisher = None
 
     def send(
             self,

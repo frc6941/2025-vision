@@ -276,11 +276,11 @@ if __name__ == "__main__":
             fps_count.value = 0
 
         if not queue_detection.empty():
-            a: DetectResult = queue_detection.get()
-            _fps_pub.set(a.fps)
-            _observations_pub.set(a.observation, a.time)
+            result: DetectResult = queue_detection.get()
+            _fps_pub.set(result.fps)
+            _observations_pub.set(result.observation, result.time)
             _demo_observations_pub.set(
-                a.demo_observation, a.time)
+                result.demo_observation, result.time)
             ntcore.NetworkTableInstance.getDefault().flush()
 
         # Start calibration
