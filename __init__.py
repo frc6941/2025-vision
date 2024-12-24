@@ -168,6 +168,10 @@ def imgPublisher(qImage, qTime, qConfig):
     capture = GStreamerCapture()
     config = ConfigStore(LocalConfig(), RemoteConfig())
     remote_config_source: ConfigSource = NTConfigSource()
+    local_config_source: ConfigSource = FileConfigSource()
+    local_config_source.update(config)
+    ntcore.NetworkTableInstance.getDefault().setServer(config.local_config.server_ip)
+    ntcore.NetworkTableInstance.getDefault().startClient4(config.local_config.device_id)
     while True:
         time_start = time.time()
         # update config
