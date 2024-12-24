@@ -181,7 +181,7 @@ def imgPublisher(qImage, qTime, qConfig):
 
         # publish image with timestamp & config if processes aren't working
         if qImage.empty():
-            print("Image Before Queue " + str(time.time() - time_start))
+            print("Image Before Queue "+str(time.time()-time_start))
             time1 = time.time()
             qImage.put(image)
             print("Queue " + str(time.time() - time1))
@@ -189,7 +189,7 @@ def imgPublisher(qImage, qTime, qConfig):
             qConfig.put(config)
             # cv2.imshow("a", image)
             # cv2.waitKey(1)
-            print("Get Image: " + str(time.time() - time_start) + "\n")
+            print("Get Image: " + str(time.time() - time_start)+"\n")
 
 
 if __name__ == "__main__":
@@ -199,11 +199,9 @@ if __name__ == "__main__":
     pool = multiprocessing.Pool(processes=cpu_count() - 3)
     pool2 = multiprocessing.Pool(processes=1)
     pool3 = multiprocessing.Pool(processes=1)
-    from collections import deque
 
     # variables sharing between processes
-    # queue_image = manager.Queue()
-    queue_image = deque()
+    queue_image = manager.Queue()
     queue_time = manager.Queue()
     queue_config = manager.Queue()
     queue_result = manager.Queue()
