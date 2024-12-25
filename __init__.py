@@ -38,9 +38,11 @@ def imgProcessor(
     # estimator
     camera_pose_estimator = MultiTargetCameraPoseEstimator()
     tag_pose_estimator = SquareTargetPoseEstimator()
-    file = open('.\tmp', 'rb')
+    file = open('./tmp.pkl', 'rb')
     while True:
+        print(111)
         image = pickle.load(file)
+        print(image)
         pTime = qTime.get()
         pConfig = qConfig.get()
         image_observations = fiducial_detector.detect_fiducials(image, pConfig)
@@ -173,7 +175,7 @@ def imgPublisher(qTime, qConfig):
     local_config_source.update(config)
     ntcore.NetworkTableInstance.getDefault().setServer(config.local_config.server_ip)
     ntcore.NetworkTableInstance.getDefault().startClient4(config.local_config.device_id)
-    file = open('.\tmp', 'wb')
+    file = open('./tmp.pkl', 'wb')
     while True:
         # update config
         remote_config_source.update(config)
@@ -187,7 +189,7 @@ def imgPublisher(qTime, qConfig):
         if qConfig.empty():
             qTime.put(time.time())
             qConfig.put(config)
-        pickle.dump(image, file)
+            pickle.dump(image, file)
 
 
 if __name__ == "__main__":
