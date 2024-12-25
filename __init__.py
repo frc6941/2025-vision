@@ -40,32 +40,33 @@ def imgProcessor(
     tag_pose_estimator = SquareTargetPoseEstimator()
     file = open('./tmp.pkl', 'rb')
     while True:
-        print(111)
-        image = pickle.load(file)
-        print(image)
-        pTime = qTime.get()
-        pConfig = qConfig.get()
-        image_observations = fiducial_detector.detect_fiducials(image, pConfig)
-        [overlay_image_observation(image, x) for x in image_observations]
-        camera_pose_observation = camera_pose_estimator.solve_camera_pose(
-            [x for x in image_observations if x.tag_id != DEMO_ID], pConfig
-        )
-        demo_image_observations = [
-            x for x in image_observations if x.tag_id == DEMO_ID
-        ]
-        demo_pose_observation: Union[FiducialPoseObservation, None] = None
-        if len(demo_image_observations) > 0:
-            demo_pose_observation = tag_pose_estimator.solve_fiducial_pose(
-                demo_image_observations[0], pConfig
+        if not qConfig.empty():
+            print(111)
+            image = pickle.load(file)
+            print(image)
+            pTime = qTime.get()
+            pConfig = qConfig.get()
+            image_observations = fiducial_detector.detect_fiducials(image, pConfig)
+            [overlay_image_observation(image, x) for x in image_observations]
+            camera_pose_observation = camera_pose_estimator.solve_camera_pose(
+                [x for x in image_observations if x.tag_id != DEMO_ID], pConfig
             )
-        send(
-            qDetection=qDetection,
-            timestamp=pTime,
-            observation=camera_pose_observation,
-            demo_observation=demo_pose_observation,
-            fps=fps_count.value,
-        )
-        qResult.put(image)
+            demo_image_observations = [
+                x for x in image_observations if x.tag_id == DEMO_ID
+            ]
+            demo_pose_observation: Union[FiducialPoseObservation, None] = None
+            if len(demo_image_observations) > 0:
+                demo_pose_observation = tag_pose_estimator.solve_fiducial_pose(
+                    demo_image_observations[0], pConfig
+                )
+            send(
+                qDetection=qDetection,
+                timestamp=pTime,
+                observation=camera_pose_observation,
+                demo_observation=demo_pose_observation,
+                fps=fps_count.value,
+            )
+            qResult.put(image)
 
 
 def streaming(qResult, fps_count):
