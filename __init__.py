@@ -40,7 +40,7 @@ def imgProcessor(
     tag_pose_estimator = SquareTargetPoseEstimator()
     shared_image = shared_memory.SharedMemory(create=False, name="img", size=721)
     while True:
-        image = shared_image
+        image = shared_image.buf
         pTime = qTime.get()
         pConfig = qConfig.get()
         image_observations = fiducial_detector.detect_fiducials(image, pConfig)
@@ -183,7 +183,7 @@ def imgPublisher(qTime, qConfig):
         while not success:
             print("Failed to get image")
             time.sleep(0.5)
-        shared_image = image
+        shared_image.buf = image
 
 
 if __name__ == "__main__":
