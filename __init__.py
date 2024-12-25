@@ -1,5 +1,6 @@
 import math
 import multiprocessing
+import pickle
 import sys
 import time
 from multiprocessing import cpu_count
@@ -19,8 +20,8 @@ from output.DetectResult import DetectResult
 from output.StreamServer import MjpegServer
 from output.overlay_util import *
 from pipeline.CameraPoseEstimator import MultiTargetCameraPoseEstimator
-from pipeline.Capture import DefaultCapture
-# from pipeline.Capture import GStreamerCapture
+# from pipeline.Capture import DefaultCapture
+from pipeline.Capture import GStreamerCapture
 from pipeline.FiducialDetector import ArucoFiducialDetector
 from pipeline.PoseEstimator import SquareTargetPoseEstimator
 from vision_types import FiducialPoseObservation, CameraPoseObservation
@@ -165,8 +166,8 @@ def send(
 
 
 def imgPublisher(qTime, qConfig):
-    capture = DefaultCapture()
-    # capture = GStreamerCapture()
+    # capture = DefaultCapture()
+    capture = GStreamerCapture()
     config = ConfigStore(LocalConfig(), RemoteConfig())
     remote_config_source: ConfigSource = NTConfigSource()
     local_config_source: ConfigSource = FileConfigSource()
@@ -183,7 +184,9 @@ def imgPublisher(qTime, qConfig):
         while not success:
             print("Failed to get image")
             time.sleep(0.5)
-        shared_image.buf = image
+        pickled_image = pickle.dump(image)
+        print(len(pickled_image))
+        shared_image.buf[:len(pickled_image)] = pickled_image
 
 
 if __name__ == "__main__":
