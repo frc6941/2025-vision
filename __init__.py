@@ -3,6 +3,7 @@ import multiprocessing
 import sys
 import time
 from multiprocessing import cpu_count
+from multiprocessing import shared_memory
 from typing import Union, List
 
 import ntcore
@@ -18,14 +19,14 @@ from output.DetectResult import DetectResult
 from output.StreamServer import MjpegServer
 from output.overlay_util import *
 from pipeline.CameraPoseEstimator import MultiTargetCameraPoseEstimator
-from pipeline.Capture import GStreamerCapture
+from pipeline.Capture import DefaultCapture
+# from pipeline.Capture import GStreamerCapture
 from pipeline.FiducialDetector import ArucoFiducialDetector
 from pipeline.PoseEstimator import SquareTargetPoseEstimator
 from vision_types import FiducialPoseObservation, CameraPoseObservation
 
 
 def imgProcessor(
-        qImage,
         qTime,
         qConfig,
         qResult,
@@ -37,32 +38,32 @@ def imgProcessor(
     # estimator
     camera_pose_estimator = MultiTargetCameraPoseEstimator()
     tag_pose_estimator = SquareTargetPoseEstimator()
+    shared_image = shared_memory.SharedMemory(create=False, name="img", size=721)
     while True:
-        if not qImage.empty():
-            image = qImage.get()
-            pTime = qTime.get()
-            pConfig = qConfig.get()
-            image_observations = fiducial_detector.detect_fiducials(image, pConfig)
-            [overlay_image_observation(image, x) for x in image_observations]
-            camera_pose_observation = camera_pose_estimator.solve_camera_pose(
-                [x for x in image_observations if x.tag_id != DEMO_ID], pConfig
+        image = shared_image
+        pTime = qTime.get()
+        pConfig = qConfig.get()
+        image_observations = fiducial_detector.detect_fiducials(image, pConfig)
+        [overlay_image_observation(image, x) for x in image_observations]
+        camera_pose_observation = camera_pose_estimator.solve_camera_pose(
+            [x for x in image_observations if x.tag_id != DEMO_ID], pConfig
+        )
+        demo_image_observations = [
+            x for x in image_observations if x.tag_id == DEMO_ID
+        ]
+        demo_pose_observation: Union[FiducialPoseObservation, None] = None
+        if len(demo_image_observations) > 0:
+            demo_pose_observation = tag_pose_estimator.solve_fiducial_pose(
+                demo_image_observations[0], pConfig
             )
-            demo_image_observations = [
-                x for x in image_observations if x.tag_id == DEMO_ID
-            ]
-            demo_pose_observation: Union[FiducialPoseObservation, None] = None
-            if len(demo_image_observations) > 0:
-                demo_pose_observation = tag_pose_estimator.solve_fiducial_pose(
-                    demo_image_observations[0], pConfig
-                )
-            send(
-                qDetection=qDetection,
-                timestamp=pTime,
-                observation=camera_pose_observation,
-                demo_observation=demo_pose_observation,
-                fps=fps_count.value,
-            )
-            qResult.put(image)
+        send(
+            qDetection=qDetection,
+            timestamp=pTime,
+            observation=camera_pose_observation,
+            demo_observation=demo_pose_observation,
+            fps=fps_count.value,
+        )
+        qResult.put(image)
 
 
 def streaming(qResult, fps_count):
@@ -163,17 +164,17 @@ def send(
     qDetection.put(DetectResult(fps, observation_data, demo_observation_data, math.floor(timestamp * 1000000)))
 
 
-def imgPublisher(qImage, qTime, qConfig):
-    # capture = DefaultCapture()
-    capture = GStreamerCapture()
+def imgPublisher(qTime, qConfig):
+    capture = DefaultCapture()
+    # capture = GStreamerCapture()
     config = ConfigStore(LocalConfig(), RemoteConfig())
     remote_config_source: ConfigSource = NTConfigSource()
     local_config_source: ConfigSource = FileConfigSource()
     local_config_source.update(config)
     ntcore.NetworkTableInstance.getDefault().setServer(config.local_config.server_ip)
     ntcore.NetworkTableInstance.getDefault().startClient4(config.local_config.device_id)
+    shared_image = shared_memory.SharedMemory(create=True, name="img", size=721)
     while True:
-        time_start = time.time()
         # update config
         remote_config_source.update(config)
 
@@ -182,18 +183,7 @@ def imgPublisher(qImage, qTime, qConfig):
         while not success:
             print("Failed to get image")
             time.sleep(0.5)
-
-        # publish image with timestamp & config if processes aren't working
-        if qImage.empty():
-            print("Image Before Queue "+str(time.time()-time_start))
-            time1 = time.time()
-            qImage.put(image)
-            print("Queue " + str(time.time() - time1))
-            qTime.put(time.time())
-            qConfig.put(config)
-            # cv2.imshow("a", image)
-            # cv2.waitKey(1)
-            print("Get Image: " + str(time.time() - time_start)+"\n")
+        shared_image = image
 
 
 if __name__ == "__main__":
@@ -217,7 +207,6 @@ if __name__ == "__main__":
         pool.apply_async(
             func=imgProcessor,
             args=(
-                queue_image,
                 queue_time,
                 queue_config,
                 queue_result,
@@ -226,7 +215,7 @@ if __name__ == "__main__":
             ),
         )
     pool2.apply_async(func=streaming, args=(queue_result, fps_count,), )
-    pool3.apply_async(func=imgPublisher, args=(queue_image, queue_time, queue_config,), )
+    pool3.apply_async(func=imgPublisher, args=(queue_time, queue_config,), )
 
     config = ConfigStore(LocalConfig(), RemoteConfig())
     local_config_source: ConfigSource = FileConfigSource()
