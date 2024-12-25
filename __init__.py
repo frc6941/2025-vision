@@ -188,9 +188,9 @@ def imgPublisher(qTime, qConfig):
             time.sleep(0.5)
 
         if qConfig.empty():
+            pickle.dump(image, file)
             qTime.put(time.time())
             qConfig.put(config)
-            pickle.dump(image, file)
 
 
 if __name__ == "__main__":
