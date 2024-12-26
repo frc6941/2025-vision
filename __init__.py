@@ -40,11 +40,11 @@ def imgProcessor(
     tag_pose_estimator = SquareTargetPoseEstimator()
     while True:
         if not qConfig.empty():
-            print(111)
+            time1=time.time()
             file = open('./tmp.pkl', 'rb')
             image = pickle.load(file)
             file.close()
-            print(image)
+            print("process "+str(time.time()-time1))
             pTime = qTime.get()
             pConfig = qConfig.get()
             image_observations = fiducial_detector.detect_fiducials(image, pConfig)
@@ -60,6 +60,7 @@ def imgProcessor(
                 demo_pose_observation = tag_pose_estimator.solve_fiducial_pose(
                     demo_image_observations[0], pConfig
                 )
+            time1=time.time()
             send(
                 qDetection=qDetection,
                 timestamp=pTime,
@@ -67,7 +68,9 @@ def imgProcessor(
                 demo_observation=demo_pose_observation,
                 fps=fps_count.value,
             )
-            qResult.put(image)
+            # qResult.put(image)
+            qResult.put(123)
+            print("send "+str(time.time()-time1))
 
 
 def streaming(qResult, fps_count):
@@ -189,9 +192,15 @@ def imgPublisher(qTime, qConfig):
             success, image = capture.get_frame(config)
 
         if qConfig.empty():
+            time1=time.time()
             file = open('./tmp.pkl', 'wb')
+            print("file open "+str(time.time()-time1))
+            time1=time.time()
             pickle.dump(image, file)
+            print("pickle "+str(time.time()-time1))
+            time1=time.time()
             file.close()
+            print("file close "+str(time.time()-time1))
             qTime.put(time.time())
             qConfig.put(config)
 
