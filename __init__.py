@@ -40,11 +40,11 @@ def imgProcessor(
     tag_pose_estimator = SquareTargetPoseEstimator()
     while True:
         if not qConfig.empty():
-            time1=time.time()
+            time1 = time.time()
             file = open('./tmp.pkl', 'rb')
             image = pickle.load(file)
             file.close()
-            print("process "+str(time.time()-time1))
+            print("process " + str(time.time() - time1))
             pTime = qTime.get()
             pConfig = qConfig.get()
             image_observations = fiducial_detector.detect_fiducials(image, pConfig)
@@ -60,7 +60,7 @@ def imgProcessor(
                 demo_pose_observation = tag_pose_estimator.solve_fiducial_pose(
                     demo_image_observations[0], pConfig
                 )
-            time1=time.time()
+            time1 = time.time()
             send(
                 qDetection=qDetection,
                 timestamp=pTime,
@@ -70,10 +70,11 @@ def imgProcessor(
             )
             # qResult.put(image)
             qResult.put(123)
-            print("send "+str(time.time()-time1))
+            print("send " + str(time.time() - time1))
+            fps_count.value += 1
 
 
-def streaming(qResult, fps_count):
+def streaming(qResult):
     config = ConfigStore(LocalConfig(), RemoteConfig())
     # start stream server
     stream_server = MjpegServer()
@@ -90,7 +91,6 @@ def streaming(qResult, fps_count):
                 cnt = 0
             else:
                 qResult.get()
-            fps_count.value += 1
 
 
 def send(
@@ -192,15 +192,15 @@ def imgPublisher(qTime, qConfig):
             success, image = capture.get_frame(config)
 
         if qConfig.empty():
-            time1=time.time()
+            time1 = time.time()
             file = open('./tmp.pkl', 'wb')
-            print("file open "+str(time.time()-time1))
-            time1=time.time()
+            print("file open " + str(time.time() - time1))
+            time1 = time.time()
             pickle.dump(image, file)
-            print("pickle "+str(time.time()-time1))
-            time1=time.time()
+            print("pickle " + str(time.time() - time1))
+            time1 = time.time()
             file.close()
-            print("file close "+str(time.time()-time1))
+            print("file close " + str(time.time() - time1))
             qTime.put(time.time())
             qConfig.put(config)
 
@@ -233,7 +233,7 @@ if __name__ == "__main__":
                 fps_count,
             ),
         )
-    pool2.apply_async(func=streaming, args=(queue_result, fps_count,), )
+    pool2.apply_async(func=streaming, args=(queue_result,), )
     pool3.apply_async(func=imgPublisher, args=(queue_time, queue_config,), )
 
     config = ConfigStore(LocalConfig(), RemoteConfig())
