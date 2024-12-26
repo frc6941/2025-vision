@@ -57,7 +57,7 @@ class DefaultCapture(Capture):
             self._video = None
 
         if self._video == None:
-            self._video = cv2.VideoCapture(int(config_store.remote_config.camera_id), cv2.CAP_V4L)
+            self._video = cv2.VideoCapture(config_store.remote_config.camera_id, cv2.CAP_V4L)
             self._video.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
             self._video.set(cv2.CAP_PROP_FPS, config_store.remote_config.fps)
             self._video.set(cv2.CAP_PROP_FRAME_WIDTH, config_store.remote_config.camera_resolution_width)

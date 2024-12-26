@@ -19,8 +19,8 @@ from output.DetectResult import DetectResult
 from output.StreamServer import MjpegServer
 from output.overlay_util import *
 from pipeline.CameraPoseEstimator import MultiTargetCameraPoseEstimator
-# from pipeline.Capture import DefaultCapture
-from pipeline.Capture import GStreamerCapture
+from pipeline.Capture import DefaultCapture
+# from pipeline.Capture import GStreamerCapture
 from pipeline.FiducialDetector import ArucoFiducialDetector
 from pipeline.PoseEstimator import SquareTargetPoseEstimator
 from vision_types import FiducialPoseObservation, CameraPoseObservation
@@ -40,14 +40,14 @@ def imgProcessor(
     tag_pose_estimator = SquareTargetPoseEstimator()
     while True:
         if not qConfig.empty():
-            time1 = time.time()
             file = open('./tmp.pkl', 'rb')
             image = pickle.load(file)
             file.close()
-            print("process " + str(time.time() - time1))
             pTime = qTime.get()
             pConfig = qConfig.get()
+            time1=time.time()
             image_observations = fiducial_detector.detect_fiducials(image, pConfig)
+            print("2 "+str(time.time()-time1))
             [overlay_image_observation(image, x) for x in image_observations]
             camera_pose_observation = camera_pose_estimator.solve_camera_pose(
                 [x for x in image_observations if x.tag_id != DEMO_ID], pConfig
@@ -60,7 +60,6 @@ def imgProcessor(
                 demo_pose_observation = tag_pose_estimator.solve_fiducial_pose(
                     demo_image_observations[0], pConfig
                 )
-            time1 = time.time()
             send(
                 qDetection=qDetection,
                 timestamp=pTime,
@@ -68,9 +67,8 @@ def imgProcessor(
                 demo_observation=demo_pose_observation,
                 fps=fps_count.value,
             )
-            # qResult.put(image)
-            qResult.put(123)
-            print("send " + str(time.time() - time1))
+            qResult.put(image)
+            print("all " + str(time.time() - time1))
             fps_count.value += 1
 
 
@@ -172,8 +170,8 @@ def send(
 
 
 def imgPublisher(qTime, qConfig):
-    # capture = DefaultCapture()
-    capture = GStreamerCapture()
+    capture = DefaultCapture()
+    # capture = GStreamerCapture()
     config = ConfigStore(LocalConfig(), RemoteConfig())
     remote_config_source: ConfigSource = NTConfigSource()
     local_config_source: ConfigSource = FileConfigSource()
@@ -192,15 +190,9 @@ def imgPublisher(qTime, qConfig):
             success, image = capture.get_frame(config)
 
         if qConfig.empty():
-            time1 = time.time()
             file = open('./tmp.pkl', 'wb')
-            print("file open " + str(time.time() - time1))
-            time1 = time.time()
             pickle.dump(image, file)
-            print("pickle " + str(time.time() - time1))
-            time1 = time.time()
             file.close()
-            print("file close " + str(time.time() - time1))
             qTime.put(time.time())
             qConfig.put(config)
 
