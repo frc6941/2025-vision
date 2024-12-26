@@ -38,11 +38,12 @@ def imgProcessor(
     # estimator
     camera_pose_estimator = MultiTargetCameraPoseEstimator()
     tag_pose_estimator = SquareTargetPoseEstimator()
-    file = open('./tmp.pkl', 'rb')
     while True:
         if not qConfig.empty():
             print(111)
+            file = open('./tmp.pkl', 'rb')
             image = pickle.load(file)
+            file.close()
             print(image)
             pTime = qTime.get()
             pConfig = qConfig.get()
@@ -176,7 +177,6 @@ def imgPublisher(qTime, qConfig):
     local_config_source.update(config)
     ntcore.NetworkTableInstance.getDefault().setServer(config.local_config.server_ip)
     ntcore.NetworkTableInstance.getDefault().startClient4(config.local_config.device_id)
-    file = open('./tmp.pkl', 'wb')
     while True:
         # update config
         remote_config_source.update(config)
@@ -186,9 +186,12 @@ def imgPublisher(qTime, qConfig):
         while not success:
             print("Failed to get image")
             time.sleep(0.5)
+            success, image = capture.get_frame(config)
 
         if qConfig.empty():
+            file = open('./tmp.pkl', 'wb')
             pickle.dump(image, file)
+            file.close()
             qTime.put(time.time())
             qConfig.put(config)
 
