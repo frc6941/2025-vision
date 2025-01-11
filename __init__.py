@@ -4,7 +4,7 @@ import pickle
 import sys
 import time
 from multiprocessing import cpu_count
-from typing import Union, List
+from typing import Optional
 
 import ntcore
 
@@ -14,7 +14,7 @@ from calibration.CalibrationCommandSource import (
 )
 from calibration.CalibrationSession import CalibrationSession
 from config.ConfigSource import ConfigSource, FileConfigSource, NTConfigSource
-from config.config import LocalConfig, RemoteConfig
+from config.config import LocalConfig, RemoteConfig, ConfigStore
 from output.DetectResult import DetectResult
 from output.StreamServer import MjpegServer
 from output.overlay_util import *
@@ -25,83 +25,84 @@ from pipeline.FiducialDetector import ArucoFiducialDetector
 from pipeline.PoseEstimator import SquareTargetPoseEstimator
 from vision_types import FiducialPoseObservation, CameraPoseObservation
 
+DEMO_ID = 29
 
-def imgProcessor(
-        qTime,
-        qConfig,
-        qResult,
-        qDetection,
-        fps_count,
+
+def process_img(
+        q_time,
+        q_config,
+        q_result,
+        q_detection,
+        fps,
 ):
-    DEMO_ID = 29
     fiducial_detector = ArucoFiducialDetector(cv2.aruco.DICT_APRILTAG_36h11)
     # estimator
     camera_pose_estimator = MultiTargetCameraPoseEstimator()
     tag_pose_estimator = SquareTargetPoseEstimator()
     while True:
-        if not qConfig.empty():
+        if not q_config.empty():
             file = open('./tmp.pkl', 'rb')
             image = pickle.load(file)
             file.close()
-            pTime = qTime.get()
-            pConfig = qConfig.get()
-            time1=time.time()
-            image_observations = fiducial_detector.detect_fiducials(image, pConfig)
-            print("2 "+str(time.time()-time1))
+            p_time = q_time.get()
+            p_config = q_config.get()
+            time1 = time.time()
+            image_observations = fiducial_detector.detect_fiducials(image, p_config)
+            print("2 " + str(time.time() - time1))
             [overlay_image_observation(image, x) for x in image_observations]
             camera_pose_observation = camera_pose_estimator.solve_camera_pose(
-                [x for x in image_observations if x.tag_id != DEMO_ID], pConfig
+                [x for x in image_observations if x.tag_id != DEMO_ID], p_config
             )
             demo_image_observations = [
                 x for x in image_observations if x.tag_id == DEMO_ID
             ]
-            demo_pose_observation: Union[FiducialPoseObservation, None] = None
+            demo_pose_observation: Optional[FiducialPoseObservation] = None
             if len(demo_image_observations) > 0:
                 demo_pose_observation = tag_pose_estimator.solve_fiducial_pose(
-                    demo_image_observations[0], pConfig
+                    demo_image_observations[0], p_config
                 )
             send(
-                qDetection=qDetection,
-                timestamp=pTime,
+                q_detection=q_detection,
+                timestamp=p_time,
                 observation=camera_pose_observation,
                 demo_observation=demo_pose_observation,
-                fps=fps_count.value,
+                fps=fps.value,
             )
-            qResult.put(image)
+            q_result.put(image)
             print("all " + str(time.time() - time1))
-            fps_count.value += 1
+            fps.value += 1
 
 
-def streaming(qResult):
-    config = ConfigStore(LocalConfig(), RemoteConfig())
+def streaming(q_result):
+    config_store = ConfigStore(LocalConfig(), RemoteConfig())
     # start stream server
     stream_server = MjpegServer()
-    stream_server.start(config)
+    stream_server.start(config_store)
     # show 1 frame every display_freq frames
     # TODO: remote config
     cnt = 0
     display_freq = 5
     while True:
-        if not qResult.empty():
+        if not q_result.empty():
             cnt += 1
             if cnt % display_freq == 0:
-                stream_server.set_frame(qResult.get())
+                stream_server.set_frame(q_result.get())
                 cnt = 0
             else:
-                qResult.get()
+                q_result.get()
 
 
 def send(
-        qDetection,
+        q_detection,
         timestamp: float,
-        observation: Union[CameraPoseObservation, None],
-        demo_observation: Union[FiducialPoseObservation, None],
-        fps: Union[int, None] = None,
+        observation: Optional[CameraPoseObservation],
+        demo_observation: Optional[FiducialPoseObservation],
+        fps: Optional[int] = None,
 ) -> None:
     # print(time.time())
-    observation_data: List[float] = [0]
-    demo_observation_data: List[float] = []
-    if observation != None:
+    observation_data: list[float] = [0]
+    demo_observation_data: list[float] = []
+    if observation is not None:
         # print(observation)
         observation_data[0] = 1
         observation_data.append(observation.error_0)
@@ -112,7 +113,7 @@ def send(
         observation_data.append(observation.pose_0.rotation().getQuaternion().X())
         observation_data.append(observation.pose_0.rotation().getQuaternion().Y())
         observation_data.append(observation.pose_0.rotation().getQuaternion().Z())
-        if observation.error_1 != None and observation.pose_1 != None:
+        if observation.error_1 is not None and observation.pose_1 is not None:
             observation_data[0] = 2
             observation_data.append(observation.error_1)
             observation_data.append(observation.pose_1.translation().X())
@@ -132,7 +133,7 @@ def send(
             )
         for tag_id in observation.tag_ids:
             observation_data.append(tag_id)
-    if demo_observation != None:
+    if demo_observation is not None:
         demo_observation_data.append(demo_observation.error_0)
         demo_observation_data.append(demo_observation.pose_0.translation().X())
         demo_observation_data.append(demo_observation.pose_0.translation().Y())
@@ -166,35 +167,36 @@ def send(
             demo_observation.pose_1.rotation().getQuaternion().Z()
         )
     # return fps, observation_data, demo_observation_data, math.floor(timestamp * 1000000)
-    qDetection.put(DetectResult(fps, observation_data, demo_observation_data, math.floor(timestamp * 1000000)))
+    q_detection.put(DetectResult(fps, observation_data, demo_observation_data, math.floor(timestamp * 1000000)))
 
 
-def imgPublisher(qTime, qConfig):
+def publish_img(q_time, q_config):
     capture = DefaultCapture()
     # capture = GStreamerCapture()
-    config = ConfigStore(LocalConfig(), RemoteConfig())
-    remote_config_source: ConfigSource = NTConfigSource()
-    local_config_source: ConfigSource = FileConfigSource()
-    local_config_source.update(config)
-    ntcore.NetworkTableInstance.getDefault().setServer(config.local_config.server_ip)
-    ntcore.NetworkTableInstance.getDefault().startClient4(config.local_config.device_id)
+    config_store = ConfigStore(LocalConfig(), RemoteConfig())
+    config_source_remote: ConfigSource = NTConfigSource()
+    config_source_local: ConfigSource = FileConfigSource()
+    config_source_local.update(config_store)
+    ntcore.NetworkTableInstance.getDefault().setServer(config_store.local_config.server_ip)
+    ntcore.NetworkTableInstance.getDefault().startClient4(config_store.local_config.device_id)
     while True:
         # update config
-        remote_config_source.update(config)
+        config_source_remote.update(config_store)
 
         # get image
-        success, image = capture.get_frame(config)
+        success, image = capture.get_frame(config_store)
         while not success:
             print("Failed to get image")
             time.sleep(0.5)
-            success, image = capture.get_frame(config)
+            success, image = capture.get_frame(config_store)
 
-        if qConfig.empty():
+        if q_config.empty():
             file = open('./tmp.pkl', 'wb')
+            # noinspection PyTypeChecker
             pickle.dump(image, file)
             file.close()
-            qTime.put(time.time())
-            qConfig.put(config)
+            q_time.put(time.time())
+            q_config.put(config_store)
 
 
 if __name__ == "__main__":
@@ -216,7 +218,7 @@ if __name__ == "__main__":
     # create cpu_count() process
     for i in range(cpu_count() - 3):  # TODO: change range when commit
         pool.apply_async(
-            func=imgProcessor,
+            func=process_img,
             args=(
                 queue_time,
                 queue_config,
@@ -226,7 +228,7 @@ if __name__ == "__main__":
             ),
         )
     pool2.apply_async(func=streaming, args=(queue_result,), )
-    pool3.apply_async(func=imgPublisher, args=(queue_time, queue_config,), )
+    pool3.apply_async(func=publish_img, args=(queue_time, queue_config,), )
 
     config = ConfigStore(LocalConfig(), RemoteConfig())
     local_config_source: ConfigSource = FileConfigSource()

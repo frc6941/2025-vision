@@ -1,4 +1,6 @@
 import json
+from json import JSONDecodeError
+from typing import Optional
 
 import cv2
 import ntcore
@@ -15,9 +17,6 @@ class ConfigSource:
 class FileConfigSource(ConfigSource):
     CONFIG_FILENAME = "config.json"
     CALIBRATION_FILENAME = "calibration.json"
-
-    def __init__(self) -> None:
-        pass
 
     def update(self, config_store: ConfigStore) -> None:
         # Get config
@@ -39,19 +38,20 @@ class FileConfigSource(ConfigSource):
 
 
 class NTConfigSource(ConfigSource):
-    _init_complete: bool = False
-    _camera_id_sub: ntcore.StringSubscriber
-    _camera_resolution_width_sub: ntcore.IntegerSubscriber
-    _camera_resolution_height_sub: ntcore.IntegerSubscriber
-    _camera_auto_exposure_sub: ntcore.DoubleSubscriber
-    _camera_exposure_sub: ntcore.IntegerSubscriber
-    _camera_gain_sub: ntcore.IntegerSubscriber
-    _fiducial_size_m_sub: ntcore.DoubleSubscriber
-    _fps: ntcore.DoubleSubscriber
-    _brightness: ntcore.DoubleSubscriber
-    _contrast: ntcore.DoubleSubscriber
-    _buffersize: ntcore.DoubleSubscriber
-    _tag_layout_sub: ntcore.DoubleSubscriber
+    def __init__(self):
+        self._init_complete: bool = False
+        self._camera_id_sub: Optional[ntcore.StringSubscriber] = None
+        self._camera_resolution_width_sub: Optional[ntcore.IntegerSubscriber] = None
+        self._camera_resolution_height_sub: Optional[ntcore.IntegerSubscriber] = None
+        self._camera_auto_exposure_sub: Optional[ntcore.DoubleSubscriber] = None
+        self._camera_exposure_sub: Optional[ntcore.IntegerSubscriber] = None
+        self._camera_gain_sub: Optional[ntcore.IntegerSubscriber] = None
+        self._fiducial_size_m_sub: Optional[ntcore.DoubleSubscriber] = None
+        self._fps: Optional[ntcore.DoubleSubscriber] = None
+        self._brightness: Optional[ntcore.DoubleSubscriber] = None
+        self._contrast: Optional[ntcore.DoubleSubscriber] = None
+        self._buffersize: Optional[ntcore.DoubleSubscriber] = None
+        self._tag_layout_sub: Optional[ntcore.StringSubscriber] = None
 
     def update(self, config_store: ConfigStore) -> None:
         # Initialize subscribers on first call
@@ -91,12 +91,13 @@ class NTConfigSource(ConfigSource):
         config_store.remote_config.camera_exposure = self._camera_exposure_sub.get()
         config_store.remote_config.camera_gain = self._camera_gain_sub.get()
         config_store.remote_config.fiducial_size_m = self._fiducial_size_m_sub.get()
-        config_store.remote_config.fps = self._fps.get()
-        config_store.remote_config.brightness = self._brightness.get()
-        config_store.remote_config.contrast = self._contrast.get()
-        config_store.remote_config.buffersize = self._buffersize.get()
+        # FIXME: Type cast from double to int
+        config_store.remote_config.fps = int(self._fps.get())
+        config_store.remote_config.brightness = int(self._brightness.get())
+        config_store.remote_config.contrast = int(self._contrast.get())
+        config_store.remote_config.buffersize = int(self._buffersize.get())
         try:
             config_store.remote_config.tag_layout = json.loads(self._tag_layout_sub.get())
-        except:
+        except JSONDecodeError:
             config_store.remote_config.tag_layout = None
             pass

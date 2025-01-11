@@ -4,17 +4,18 @@ from config.config import ConfigStore
 
 
 class CalibrationCommandSource:
-    def get_calibrating(self) -> bool:
+    def get_calibrating(self, config_store: ConfigStore) -> bool:
         return False
 
-    def get_capture_flag(self) -> bool:
+    def get_capture_flag(self, config_store: ConfigStore) -> bool:
         return False
 
 
 class NTCalibrationCommandSource(CalibrationCommandSource):
-    _init_complete: bool = False
-    _active_entry: ntcore.BooleanEntry
-    _capture_flag_entry: ntcore.BooleanEntry
+    def __init__(self):
+        self._init_complete: bool = False
+        self._active_entry: ntcore.BooleanEntry
+        self._capture_flag_entry: ntcore.BooleanEntry
 
     def _init(self, config_store: ConfigStore):
         if not self._init_complete:

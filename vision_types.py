@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 from typing import List, Union
 
-import numpy
 import numpy.typing
 from wpimath.geometry import *
 
