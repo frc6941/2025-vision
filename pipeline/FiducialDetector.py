@@ -1,5 +1,3 @@
-from typing import List
-
 import cv2
 
 from config.config import ConfigStore
@@ -8,19 +6,20 @@ from vision_types import FiducialImageObservation
 
 class FiducialDetector:
     def __init__(self) -> None:
-        raise NotImplementedError
+        pass
 
-    def detect_fiducials(self, image: cv2.Mat, config_store: ConfigStore) -> List[FiducialImageObservation]:
+    def detect_fiducials(self, image: cv2.Mat, config_store: ConfigStore) -> list[FiducialImageObservation]:
         raise NotImplementedError
 
 
 class ArucoFiducialDetector(FiducialDetector):
     def __init__(self, dictionary_id) -> None:
-        self._aruco_dict = cv2.aruco.Dictionary_get(dictionary_id)
-        self._aruco_params = cv2.aruco.DetectorParameters_create()
+        super().__init__()
+        self._aruco_detector = cv2.aruco.ArucoDetector(cv2.aruco.getPredefinedDictionary(dictionary_id),
+                                                       cv2.aruco.DetectorParameters())
 
-    def detect_fiducials(self, image: cv2.Mat, config_store: ConfigStore) -> List[FiducialImageObservation]:
-        corners, ids, _ = cv2.aruco.detectMarkers(image, self._aruco_dict, parameters=self._aruco_params)
+    def detect_fiducials(self, image: cv2.Mat, config_store: ConfigStore) -> list[FiducialImageObservation]:
+        corners, ids, _ = self._aruco_detector.detectMarkers(image)
         if len(corners) == 0:
             return []
-        return [FiducialImageObservation(id[0], corner) for id, corner in zip(ids, corners)]
+        return [FiducialImageObservation(i[0], corner) for i, corner in zip(ids, corners)]

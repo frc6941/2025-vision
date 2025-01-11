@@ -7,7 +7,7 @@ cap = cv2.VideoCapture(camera_id)
 
 while True:
     ret, image = cap.read()
-    if (ret):
+    if ret:
         cv2.imshow("Image", image)
         cv2.waitKey(1)
     else:

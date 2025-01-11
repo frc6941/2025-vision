@@ -1,12 +1,11 @@
 import cv2
+from wpimath.geometry import *
+
 from config.ConfigSource import ConfigSource, FileConfigSource
 from config.config import ConfigStore, LocalConfig, RemoteConfig
 from pipeline.FiducialDetector import ArucoFiducialDetector
 from pipeline.PoseEstimator import SquareTargetPoseEstimator
-from wpimath.geometry import *
-from math import pi
-
-from pipeline.coordinate_systems import openCvPoseToWpilib
+from pipeline.coordinate_systems import opencv_pose_to_wpilib
 
 
 def inches_to_meters(inches):
@@ -25,7 +24,6 @@ REFERENCE_POSE = Pose3d(
     inches_to_meters(17.163224225576677),
     Rotation3d(Quaternion(w=0.019125, x=-0.055698, y=0.016995, z=0.998120)))
 
-
 if __name__ == "__main__":
     config = ConfigStore(LocalConfig(), RemoteConfig())
     local_config_source: ConfigSource = FileConfigSource()
@@ -43,18 +41,18 @@ if __name__ == "__main__":
     for observation in pose_observations:
         if observation.tag_id == REFERENCE_ID:
             if observation.error_0 < observation.error_1:
-                camera_to_reference_pose = openCvPoseToWpilib(observation.tvec_0, observation.rvec_0)
+                camera_to_reference_pose = opencv_pose_to_wpilib(observation.tvec_0, observation.rvec_0)
             else:
-                camera_to_reference_pose = openCvPoseToWpilib(observation.tvec_1, observation.rvec_1)
+                camera_to_reference_pose = opencv_pose_to_wpilib(observation.tvec_1, observation.rvec_1)
             break
     camera_to_reference = Transform3d(camera_to_reference_pose.translation(), camera_to_reference_pose.rotation())
     field_to_camera_pose = REFERENCE_POSE.transformBy(camera_to_reference.inverse())
 
     for observation in pose_observations:
         if observation.error_0 < observation.error_1:
-            camera_to_tag_pose = openCvPoseToWpilib(observation.tvec_0, observation.rvec_0)
+            camera_to_tag_pose = opencv_pose_to_wpilib(observation.tvec_0, observation.rvec_0)
         else:
-            camera_to_tag_pose = openCvPoseToWpilib(observation.tvec_1, observation.rvec_1)
+            camera_to_tag_pose = opencv_pose_to_wpilib(observation.tvec_1, observation.rvec_1)
         camera_to_tag = Transform3d(camera_to_tag_pose.translation(), camera_to_tag_pose.rotation())
         field_to_tag_pose = field_to_camera_pose.transformBy(camera_to_tag)
         print("Tag =", observation.tag_id)

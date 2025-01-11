@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import numpy.typing
 
@@ -10,8 +10,8 @@ class LocalConfig:
     server_ip: str = "10.96.20.2"
     stream_port: int = 8000
     has_calibration: bool = True
-    camera_matrix: numpy.typing.NDArray[numpy.float64] = numpy.array([])
-    distortion_coefficients: numpy.typing.NDArray[numpy.float64] = numpy.array([])
+    camera_matrix: numpy.typing.NDArray[numpy.float64] = field(default_factory=lambda: numpy.array([]))
+    distortion_coefficients: numpy.typing.NDArray[numpy.float64] = field(default_factory=lambda: numpy.array([]))
 
 
 @dataclass

@@ -1,6 +1,5 @@
 import datetime
 import os
-from typing import List
 
 import cv2
 import numpy
@@ -9,29 +8,33 @@ from config.ConfigSource import FileConfigSource
 
 
 class CalibrationSession:
-    _all_charuco_corners: List[numpy.ndarray] = []
-    _all_charuco_ids: List[numpy.ndarray] = []
-    _imsize = None
-    _picture_cnt: int = 0
 
     def __init__(self) -> None:
-        self._aruco_dict = cv2.aruco.Dictionary_get(cv2.aruco.DICT_5X5_1000)
-        self._aruco_params = cv2.aruco.DetectorParameters_create()
-        self._charuco_board = cv2.aruco.CharucoBoard_create(
-            12, 9, 0.030, 0.023, self._aruco_dict)
+        aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_5X5_1000)
+        self._aruco_detector = cv2.aruco.ArucoDetector(aruco_dict,
+                                                       cv2.aruco.DetectorParameters())
+
+        self._charuco_board = cv2.aruco.CharucoBoard(
+            (12, 9), 0.030, 0.023, aruco_dict)
+        self._charuco_detector = cv2.aruco.CharucoDetector(self._charuco_board)
+
+        self._all_charuco_corners: list[numpy.ndarray] = []
+        self._all_charuco_ids: list[numpy.ndarray] = []
+        self._imsize = None
+        self._picture_cnt: int = 0
 
     def process_frame(self, image: cv2.Mat, save: bool) -> None:
         # Get image size
-        if self._imsize == None:
+        if self._imsize is None:
             self._imsize = (image.shape[0], image.shape[1])
 
         # Detect tags
-        (corners, ids, rejected) = cv2.aruco.detectMarkers(image, self._aruco_dict, parameters=self._aruco_params)
+        corners, ids, rejected = self._aruco_detector.detectMarkers(image)
         if len(corners) > 0:
             cv2.aruco.drawDetectedMarkers(image, corners)
 
             # Find Charuco corners
-            (retval, charuco_corners, charuco_ids) = cv2.aruco.interpolateCornersCharuco(
+            retval, charuco_corners, charuco_ids = cv2.aruco.interpolateCornersCharuco(
                 corners, ids, image, self._charuco_board)
             if retval:
                 cv2.aruco.drawDetectedCornersCharuco(image, charuco_corners, charuco_ids)
@@ -51,7 +54,8 @@ class CalibrationSession:
         if os.path.exists(FileConfigSource.CALIBRATION_FILENAME):
             os.remove(FileConfigSource.CALIBRATION_FILENAME)
 
-        (retval, camera_matrix, distortion_coefficients, rvecs, tvecs) = cv2.aruco.calibrateCameraCharuco(
+        # noinspection PyTypeChecker
+        retval, camera_matrix, distortion_coefficients, rvecs, tvecs = cv2.aruco.calibrateCameraCharuco(
             self._all_charuco_corners, self._all_charuco_ids, self._charuco_board, self._imsize, None, None)
 
         if retval:

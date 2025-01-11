@@ -1,5 +1,5 @@
 import math
-from typing import List, Union
+from typing import Optional
 
 import ntcore
 
@@ -12,26 +12,28 @@ class OutputPublisher:
             self,
             config_store: ConfigStore,
             timestamp: float,
-            observation: Union[CameraPoseObservation, None],
-            demo_observation: Union[FiducialPoseObservation, None],
-            fps: Union[int, None] = None,
+            observation: Optional[CameraPoseObservation],
+            demo_observation: Optional[FiducialPoseObservation],
+            fps: Optional[int] = None,
     ) -> None:
         raise NotImplementedError
 
 
 class NTOutputPublisher(OutputPublisher):
-    _init_complete: bool = False
-    _observations_pub: ntcore.DoubleArrayPublisher
-    _observations_pub: ntcore.DoubleArrayPublisher
-    _fps_pub: ntcore.IntegerPublisher
+    def __init__(self):
+        self._init_complete: bool = False
+        self._observations_pub: Optional[ntcore.DoubleArrayPublisher] = None
+        self._observations_pub: Optional[ntcore.DoubleArrayPublisher] = None
+        self._fps_pub: Optional[ntcore.IntegerPublisher] = None
+        self._demo_observations_pub: Optional[ntcore.DoubleArrayPublisher] = None
 
     def send(
             self,
             config_store: ConfigStore,
             timestamp: float,
-            observation: Union[CameraPoseObservation, None],
-            demo_observation: Union[FiducialPoseObservation, None],
-            fps: Union[int, None] = None,
+            observation: Optional[CameraPoseObservation],
+            demo_observation: Optional[FiducialPoseObservation],
+            fps: Optional[int] = None,
     ) -> None:
         # Initialize publishers on first call
         if not self._init_complete:
@@ -54,11 +56,11 @@ class NTOutputPublisher(OutputPublisher):
             self._fps_pub = nt_table.getIntegerTopic("fps").publish()
 
         # Send data
-        if fps != None:
+        if fps is not None:
             self._fps_pub.set(fps)
-        observation_data: List[float] = [0]
-        demo_observation_data: List[float] = []
-        if observation != None:
+        observation_data: list[float] = [0]
+        demo_observation_data: list[float] = []
+        if observation is not None:
             observation_data[0] = 1
             observation_data.append(observation.error_0)
             observation_data.append(observation.pose_0.translation().X())
@@ -68,7 +70,7 @@ class NTOutputPublisher(OutputPublisher):
             observation_data.append(observation.pose_0.rotation().getQuaternion().X())
             observation_data.append(observation.pose_0.rotation().getQuaternion().Y())
             observation_data.append(observation.pose_0.rotation().getQuaternion().Z())
-            if observation.error_1 != None and observation.pose_1 != None:
+            if observation.error_1 is not None and observation.pose_1 is not None:
                 observation_data[0] = 2
                 observation_data.append(observation.error_1)
                 observation_data.append(observation.pose_1.translation().X())
@@ -88,7 +90,7 @@ class NTOutputPublisher(OutputPublisher):
                 )
             for tag_id in observation.tag_ids:
                 observation_data.append(tag_id)
-        if demo_observation != None:
+        if demo_observation is not None:
             demo_observation_data.append(demo_observation.error_0)
             demo_observation_data.append(demo_observation.pose_0.translation().X())
             demo_observation_data.append(demo_observation.pose_0.translation().Y())
