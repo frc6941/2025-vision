@@ -1,4 +1,4 @@
-import dataclasses
+import platform
 import sys
 import time
 from typing import Optional
@@ -57,7 +57,10 @@ class DefaultCapture(Capture):
             self._video = None
 
         if self._video is None:
-            self._video = cv2.VideoCapture(config_store.remote_config.camera_id, cv2.CAP_V4L)
+            if platform.system() == "Windows":
+                self._video = cv2.VideoCapture(int(config_store.remote_config.camera_id), cv2.CAP_DSHOW)
+            else:
+                self._video = cv2.VideoCapture(config_store.remote_config.camera_id, cv2.CAP_V4L)
             self._video.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter.fourcc("M", "J", "P", "G"))
             self._video.set(cv2.CAP_PROP_FPS, config_store.remote_config.fps)
             self._video.set(cv2.CAP_PROP_FRAME_WIDTH, config_store.remote_config.camera_resolution_width)
@@ -70,8 +73,8 @@ class DefaultCapture(Capture):
             self._video.set(cv2.CAP_PROP_CONTRAST, config_store.remote_config.contrast)
             self._video.set(cv2.CAP_PROP_BUFFERSIZE, config_store.remote_config.buffersize)
 
-        self._last_config = ConfigStore(dataclasses.replace(config_store.local_config),
-                                        dataclasses.replace(config_store.remote_config))
+        self._last_config = ConfigStore(local_config=config_store.local_config,
+                                        remote_config=config_store.remote_config)
 
         retval, image = self._video.read()
         return retval, image
@@ -109,8 +112,8 @@ class GStreamerCapture(Capture):
                 # self._video = cv2.VideoCapture(int(config_store.remote_config.camera_id))
                 print("Capture session ready")
 
-        self._last_config = ConfigStore(dataclasses.replace(config_store.local_config),
-                                        dataclasses.replace(config_store.remote_config))
+        self._last_config = ConfigStore(local_config=config_store.local_config,
+                                        remote_config=config_store.remote_config)
 
         if self._video is not None:
             retval, image = self._video.read()
