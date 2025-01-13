@@ -2,7 +2,7 @@ import cv2
 from wpimath.geometry import *
 
 from config.ConfigSource import ConfigSource, FileConfigSource
-from config.config import ConfigStore, LocalConfig, RemoteConfig
+from config.config import ConfigStore
 from pipeline.FiducialDetector import ArucoFiducialDetector
 from pipeline.PoseEstimator import SquareTargetPoseEstimator
 from pipeline.coordinate_systems import opencv_pose_to_wpilib
@@ -25,7 +25,7 @@ REFERENCE_POSE = Pose3d(
     Rotation3d(Quaternion(w=0.019125, x=-0.055698, y=0.016995, z=0.998120)))
 
 if __name__ == "__main__":
-    config = ConfigStore(LocalConfig(), RemoteConfig())
+    config = ConfigStore()
     local_config_source: ConfigSource = FileConfigSource()
     local_config_source.update(config)
     config.remote_config.fiducial_size_m = inches_to_meters(6.0)

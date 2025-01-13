@@ -58,32 +58,34 @@ class NTConfigSource(ConfigSource):
         if not self._init_complete:
             nt_table = ntcore.NetworkTableInstance.getDefault().getTable(
                 "/" + config_store.local_config.device_id + "/config")
-            self._camera_id_sub = nt_table.getStringTopic("camera_id").subscribe(RemoteConfig.camera_id)
+            remote_config = RemoteConfig()
+            self._camera_id_sub = nt_table.getStringTopic("camera_id").subscribe(remote_config.camera_id)
             self._camera_resolution_width_sub = nt_table.getIntegerTopic(
-                "camera_resolution_width").subscribe(RemoteConfig.camera_resolution_width)
+                "camera_resolution_width").subscribe(remote_config.camera_resolution_width)
             self._camera_resolution_height_sub = nt_table.getIntegerTopic(
-                "camera_resolution_height").subscribe(RemoteConfig.camera_resolution_height)
+                "camera_resolution_height").subscribe(remote_config.camera_resolution_height)
             self._camera_auto_exposure_sub = nt_table.getDoubleTopic(
-                "camera_auto_exposure").subscribe(RemoteConfig.camera_auto_exposure)
+                "camera_auto_exposure").subscribe(remote_config.camera_auto_exposure)
             self._camera_exposure_sub = nt_table.getIntegerTopic(
-                "camera_exposure").subscribe(RemoteConfig.camera_exposure)
+                "camera_exposure").subscribe(remote_config.camera_exposure)
             self._camera_gain_sub = nt_table.getIntegerTopic(
-                "camera_gain").subscribe(RemoteConfig.camera_gain)
+                "camera_gain").subscribe(remote_config.camera_gain)
             self._fiducial_size_m_sub = nt_table.getDoubleTopic(
-                "fiducial_size_m").subscribe(RemoteConfig.fiducial_size_m)
+                "fiducial_size_m").subscribe(remote_config.fiducial_size_m)
             self._fps = nt_table.getDoubleTopic(
-                "fps").subscribe(RemoteConfig.fps)
+                "fps").subscribe(remote_config.fps)
             self._brightness = nt_table.getDoubleTopic(
-                "brightness").subscribe(RemoteConfig.brightness)
+                "brightness").subscribe(remote_config.brightness)
             self._contrast = nt_table.getDoubleTopic(
-                "contrast").subscribe(RemoteConfig.contrast)
+                "contrast").subscribe(remote_config.contrast)
             self._buffersize = nt_table.getDoubleTopic(
-                "buffersize").subscribe(RemoteConfig.buffersize)
+                "buffersize").subscribe(remote_config.buffersize)
             self._tag_layout_sub = nt_table.getStringTopic(
                 "tag_layout").subscribe("")
             self._init_complete = True
 
         # Read config data
+        # FIXME: Move some out of NT
         config_store.remote_config.camera_id = self._camera_id_sub.get()
         config_store.remote_config.camera_resolution_width = self._camera_resolution_width_sub.get()
         config_store.remote_config.camera_resolution_height = self._camera_resolution_height_sub.get()
@@ -100,4 +102,3 @@ class NTConfigSource(ConfigSource):
             config_store.remote_config.tag_layout = json.loads(self._tag_layout_sub.get())
         except JSONDecodeError:
             config_store.remote_config.tag_layout = None
-            pass
