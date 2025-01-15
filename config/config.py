@@ -41,8 +41,8 @@ class LocalConfig(BaseModel):
     has_calibration: bool = True
     tag_layout: Optional[dict]
     try:
-        tag_layout = json.loads(open(
-            "C:\\Users\\hs150\\SynologyDrive\\Robotics\\FRC\\2025\\2025-vision\\taglayout\\2025-official.json").read())
+        tag_layout = json.loads(open("./taglayout/2025-official.json").read())  # Linux
+        # tag_layout = json.loads(open(".\\taglayout\\2025-official.json").read())  # Windows
     except JSONDecodeError as e:
         tag_layout = None
         print("Msg: " + str(e.msg) + " Line: " + str(e.lineno) + " Col: " + str(e.colno))
