@@ -263,7 +263,7 @@ if __name__ == "__main__":
     # shared memory between processes
     pic_sm = smm.SharedMemory(config.remote_config.camera_resolution_width *
                               config.remote_config.camera_resolution_height * 3)
-    time_sm = smm.SharedMemory(1)
+    time_sm = smm.SharedMemory(8)
 
     # shared state between processes
     config_ss = manager.Value("W", "")
