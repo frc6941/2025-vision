@@ -4,3 +4,5 @@ pyntcore~=2025.2.1.0
 pillow~=11.1.0
 robotpy-wpimath~=2025.2.1.0
 pydantic~=2.10.5
+loguru~=0.7.3
+rich~=13.9.4
