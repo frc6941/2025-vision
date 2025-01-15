@@ -2,6 +2,7 @@ import cProfile
 import math
 import multiprocessing
 import pstats
+import signal
 import sys
 import threading
 import time
@@ -255,6 +256,16 @@ def debug_table(fps: dict) -> Table:
     return table
 
 
+def exit_handler(signum, frame):
+    logger.debug(f"received {signal.strsignal(signum)}, exiting")
+    logger.trace(f"at {frame}")
+    # restore cursor
+    print("\x1b[?25h")
+    sys.exit(0)
+
+
+signal.signal(signal.SIGINT, exit_handler)
+signal.signal(signal.SIGTERM, exit_handler)
 
 if __name__ == "__main__":
     # initialize shared memory
