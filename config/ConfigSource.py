@@ -1,5 +1,4 @@
 import json
-from json import JSONDecodeError
 from typing import Optional
 
 import cv2
@@ -80,8 +79,6 @@ class NTConfigSource(ConfigSource):
                 "contrast").subscribe(remote_config.contrast)
             self._buffersize = nt_table.getDoubleTopic(
                 "buffersize").subscribe(remote_config.buffersize)
-            self._tag_layout_sub = nt_table.getStringTopic(
-                "tag_layout").subscribe("")
             self._init_complete = True
 
         # Read config data
@@ -98,7 +95,3 @@ class NTConfigSource(ConfigSource):
         config_store.remote_config.brightness = int(self._brightness.get())
         config_store.remote_config.contrast = int(self._contrast.get())
         config_store.remote_config.buffersize = int(self._buffersize.get())
-        try:
-            config_store.remote_config.tag_layout = json.loads(self._tag_layout_sub.get())
-        except JSONDecodeError:
-            config_store.remote_config.tag_layout = None

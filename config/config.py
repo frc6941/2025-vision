@@ -1,5 +1,7 @@
 import base64
 import io
+import json
+from json import JSONDecodeError
 from typing import TypeAlias, Annotated, Optional
 
 import numpy.typing
@@ -34,9 +36,17 @@ PydanticNDArray: TypeAlias = Annotated[
 class LocalConfig(BaseModel):
     # edit it in config.json
     device_id: str = "northstar_0"
-    server_ip: str = "10.96.20.2"
+    server_ip: str = "127.0.0.1"  # TODO change it
     stream_port: int = 8000
     has_calibration: bool = True
+    tag_layout: Optional[dict]
+    try:
+        tag_layout = json.loads(open(
+            "C:\\Users\\hs150\\SynologyDrive\\Robotics\\FRC\\2025\\2025-vision\\taglayout\\2025-official.json").read())
+    except JSONDecodeError as e:
+        tag_layout = None
+        print("Msg: " + str(e.msg) + " Line: " + str(e.lineno) + " Col: " + str(e.colno))
+
     camera_matrix: PydanticNDArray = numpy.array([])
     distortion_coefficients: PydanticNDArray = numpy.array([])
 
@@ -54,7 +64,6 @@ class RemoteConfig(BaseModel):
     camera_exposure: int = -10
     camera_gain: int = 1
     fiducial_size_m: float = 0.1675
-    tag_layout: Optional[dict] = None
     fps: int = 60
     brightness: int = 35
     contrast: int = 60

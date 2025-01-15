@@ -15,8 +15,8 @@ class CameraPoseEstimator:
         pass
 
     def solve_camera_pose(self, image_observations: list[FiducialImageObservation], config_store: ConfigStore) -> \
-    Optional[
-        CameraPoseObservation]:
+            Optional[
+                CameraPoseObservation]:
         raise NotImplementedError
 
 
@@ -25,10 +25,10 @@ class MultiTargetCameraPoseEstimator(CameraPoseEstimator):
         super().__init__()
 
     def solve_camera_pose(self, image_observations: list[FiducialImageObservation], config_store: ConfigStore) -> \
-    Optional[
-        CameraPoseObservation]:
+            Optional[
+                CameraPoseObservation]:
         # Exit if no tag layout available
-        if config_store.remote_config.tag_layout is None:
+        if config_store.local_config.tag_layout is None:
             return None
 
         # Exit if no observations available
@@ -43,7 +43,7 @@ class MultiTargetCameraPoseEstimator(CameraPoseEstimator):
         tag_poses = []
         for observation in image_observations:
             tag_pose = None
-            for tag_data in config_store.remote_config.tag_layout["tags"]:
+            for tag_data in config_store.local_config.tag_layout["tags"]:
                 if tag_data["ID"] == observation.tag_id:
                     tag_pose = Pose3d(
                         Translation3d(
