@@ -57,7 +57,7 @@ class DefaultCapture(Capture):
             self._video = None
 
         if self._video is None:
-            if platform.system() == "Windows":
+            if platform.system() == "Windows":  # TODO: replace all "#Windows" to platform
                 self._video = cv2.VideoCapture(int(config_store.remote_config.camera_id), cv2.CAP_DSHOW)
             else:
                 self._video = cv2.VideoCapture(config_store.remote_config.camera_id, cv2.CAP_V4L)

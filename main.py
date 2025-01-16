@@ -64,6 +64,7 @@ def process_img(
     shape = (cfg.remote_config.camera_resolution_height,
              cfg.remote_config.camera_resolution_width,
              3)
+    config_changed = True
     timestamp = numpy.ndarray((1,), dtype=numpy.float64, buffer=m_time.buf)
     # noinspection PyTypeChecker
     image: cv2.Mat = numpy.ndarray(shape, dtype=numpy.uint8, buffer=m_pic.buf)
@@ -71,9 +72,10 @@ def process_img(
     e_ready.wait()
     while True:
         try:
-            if e_config.is_set():
+            if config_changed != e_config.is_set():
                 cfg = ConfigStore.model_validate_json(s_config.value)
                 logger.info("synced config")
+                config_changed = e_config.is_set()
             image_observations = fiducial_detector.detect_fiducials(image, cfg)
             [overlay_image_observation(image, x) for x in image_observations]
             camera_pose_observation = camera_pose_estimator.solve_camera_pose(
@@ -133,11 +135,9 @@ def send(
         demo_observation: Optional[FiducialPoseObservation],
         fps: Optional[int] = None,
 ) -> None:
-    # print(time.time())
     observation_data: list[float] = [0]
     demo_observation_data: list[float] = []
     if observation is not None:
-        # print(observation)
         observation_data[0] = 1
         observation_data.append(observation.error_0)
         observation_data.append(observation.pose_0.translation().X())
@@ -364,9 +364,10 @@ if __name__ == "__main__":
         if prev_config != config.model_dump_json():
             prev_config = config.model_dump_json()
             config_ss.value = prev_config
-            config_se.set()
-        else:
-            config_se.clear()
+            if config_se.is_set():
+                config_se.clear()
+            else:
+                config_se.set()
 
         # print fps
         if time.time() - last_print > 1:
