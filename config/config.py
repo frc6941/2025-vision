@@ -2,10 +2,12 @@ import base64
 import io
 import json
 from json import JSONDecodeError
+from pathlib import Path
 from typing import TypeAlias, Annotated, Optional
 
 import numpy.typing
-from pydantic import BaseModel, PlainSerializer, ConfigDict, PlainValidator
+from loguru import logger
+from pydantic import BaseModel, PlainSerializer, ConfigDict, PlainValidator, Field
 
 
 # efforts to make ndarray serializable...
@@ -26,6 +28,15 @@ def nd_array_custom_serializer(x) -> str:
         f.close()
 
 
+def get_tag_layout() -> Optional[dict]:
+    try:
+        tag_layout = json.loads(open(Path("taglayout", "2025-official.json")).read())
+        return tag_layout
+    except JSONDecodeError as e:
+        logger.exception(e)
+        return None
+
+
 PydanticNDArray: TypeAlias = Annotated[
     numpy.typing.NDArray[numpy.float64],
     PlainValidator(nd_array_custom_validator),
@@ -39,13 +50,9 @@ class LocalConfig(BaseModel):
     server_ip: str = "127.0.0.1"  # TODO change it
     stream_port: int = 8000
     has_calibration: bool = True
-    tag_layout: Optional[dict]
-    try:
-        tag_layout = json.loads(open("./taglayout/2025-official.json").read())  # Linux
-        # tag_layout = json.loads(open(".\\taglayout\\2025-official.json").read())  # Windows
-    except JSONDecodeError as e:
-        tag_layout = None
-        print("Msg: " + str(e.msg) + " Line: " + str(e.lineno) + " Col: " + str(e.colno))
+    # if you see an error in PyCharm, this is a false positive.
+    # PyCharm 2024.3.2 should fix it.
+    tag_layout: Optional[dict] = Field(default_factory=get_tag_layout)
 
     camera_matrix: PydanticNDArray = numpy.array([])
     distortion_coefficients: PydanticNDArray = numpy.array([])
