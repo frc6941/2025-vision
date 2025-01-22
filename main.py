@@ -218,6 +218,7 @@ def publish_img(
              3)
     timestamp = numpy.ndarray((1,), dtype=numpy.float64, buffer=m_time.buf)
     img_arr = numpy.ndarray(shape, dtype=numpy.uint8, buffer=m_pic.buf)
+    config_changed = True
     logger.success("initialized. waiting for camera to be ready")
     # get one frame until success
     success, image = capture.get_frame(cfg)
@@ -230,9 +231,10 @@ def publish_img(
     e_ready.set()
     while True:
         try:
-            if e_config.is_set():
+            if config_changed != e_config.is_set():
                 cfg = ConfigStore.model_validate_json(s_config.value)
                 logger.info("synced config")
+                config_changed = e_config.is_set()
             # get image
             success, image = capture.get_frame(cfg)
             while not success:
