@@ -54,7 +54,9 @@ def process_img(
         e_config: threading.Event,
         q_detection: multiprocessing.Queue,
         s_fps: dict,
-        m_pic: SharedMemory
+        m_pic: SharedMemory,
+        e_nt: threading.Event,
+        m_result_sm: SharedMemory
 ):
     fiducial_detector = ArucoFiducialDetector(cv2.aruco.DICT_APRILTAG_36h11)
     # estimator
@@ -66,12 +68,14 @@ def process_img(
              3)
     config_changed = True
     timestamp = numpy.ndarray((1,), dtype=numpy.float64, buffer=m_time.buf)
-    # noinspection PyTypeChecker
-    image: cv2.Mat = numpy.ndarray(shape, dtype=numpy.uint8, buffer=m_pic.buf)
+    # DO NOT COMBINE image2 and image !!!
+    image2 = numpy.ndarray(shape, dtype=numpy.uint8, buffer=m_pic.buf)
+    image_result: cv2.Mat = numpy.ndarray(shape, dtype=numpy.uint8, buffer=m_result_sm.buf)
     logger.success(f"id {number} initialized. waiting for ready signal")
     e_ready.wait()
     while True:
         try:
+            image: cv2.Mat = numpy.copy(image2)
             if config_changed != e_config.is_set():
                 cfg = ConfigStore.model_validate_json(s_config.value)
                 logger.info("synced config")
@@ -89,14 +93,20 @@ def process_img(
                 demo_pose_observation = tag_pose_estimator.solve_fiducial_pose(
                     demo_image_observations[0], cfg
                 )
-            send(
-                q_detection=q_detection,
-                timestamp=float(timestamp[0]),
-                observation=camera_pose_observation,
-                demo_observation=demo_pose_observation,
-                fps=sum(s_fps.values())
-            )
+            while True:
+                if not e_nt.is_set():
+                    e_nt.set()
+                    send(
+                        q_detection=q_detection,
+                        timestamp=float(timestamp[0]),
+                        observation=camera_pose_observation,
+                        demo_observation=demo_pose_observation,
+                        fps=sum(s_fps.values())
+                    )
+                    e_nt.clear()
+                    break;
             s_fps[number] += 1
+            image_result[:] = image[:]
         except Exception as e:
             logger.exception(e)
 
@@ -114,7 +124,6 @@ def streaming(e_ready: threading.Event, m_pic: SharedMemory, s_config: multiproc
     # TODO: remote config
     cnt = 0
     display_freq = 5
-    # noinspection PyTypeChecker
     image: cv2.Mat = numpy.ndarray(shape, dtype=numpy.uint8, buffer=m_pic.buf)
     logger.success("initialized. waiting for ready signal")
     e_ready.wait()
@@ -217,7 +226,7 @@ def publish_img(
              cfg.remote_config.camera_resolution_width,
              3)
     timestamp = numpy.ndarray((1,), dtype=numpy.float64, buffer=m_time.buf)
-    img_arr = numpy.ndarray(shape, dtype=numpy.uint8, buffer=m_pic.buf)
+    img_arr: cv2.Mat = numpy.ndarray(shape, dtype=numpy.uint8, buffer=m_pic.buf)
     config_changed = True
     logger.success("initialized. waiting for camera to be ready")
     # get one frame until success
@@ -298,9 +307,12 @@ if __name__ == "__main__":
     prev_config = config.model_dump_json()
 
     # shared memory between processes
-    pic_sm = smm.SharedMemory(config.remote_config.camera_resolution_width *
-                              config.remote_config.camera_resolution_height * 3)
+    shape = (config.remote_config.camera_resolution_width *
+             config.remote_config.camera_resolution_height * 3)
+    pic_sm = smm.SharedMemory(shape)
+    pic_result_sm = smm.SharedMemory(shape)
     time_sm = smm.SharedMemory(8)
+    img: cv2.Mat = numpy.ndarray(shape, dtype=numpy.uint8, buffer=pic_sm.buf)
 
     # shared state between processes
     config_ss = manager.Value("W", "")
@@ -309,6 +321,7 @@ if __name__ == "__main__":
     fps_ss = manager.dict()
 
     ready_se = manager.Event()
+    nt_se = manager.Event()
 
     # create cpu_count() process
     for i in range(cpu_count() - 3):  # TODO: change range when commit
@@ -323,10 +336,12 @@ if __name__ == "__main__":
                 queue_detection,
                 fps_ss,
                 pic_sm,
+                nt_se,
+                pic_result_sm
             ),
         )
         fps_ss[i] = 0
-    pool2.apply_async(func=streaming, args=(ready_se, pic_sm, config_ss), )
+    pool2.apply_async(func=streaming, args=(ready_se, pic_result_sm, config_ss), )
     pool3.apply_async(func=publish_img, args=(ready_se, time_sm, config_ss, config_se, pic_sm), )
 
     # calibration setting
@@ -394,7 +409,7 @@ if __name__ == "__main__":
                 calibrating = True
             # calib
             calibration_session.process_frame(
-                queue_detection.get(), calibration_command_source.get_capture_flag(config)
+                img.reshape(shape), calibration_command_source.get_capture_flag(config)
             )
 
         elif calibrating:
